@@ -143,11 +143,12 @@ var BreezeConnect = function(params) {
             return;
         } 
         self.socket.emit("join", symbols);
-        self.socket.on('stock', self.on_message)
+        self.socket.on('stock', self.on_message);
     };
 
     self.on_ohlc_stream = function(data){
-        self.on_ticks(data)
+        let parsed_data = self.parse_ohlc_data(data);
+        self.on_ticks(parsed_data);
     }
 
     self.watch_stream_data = function(symbols,channel){
@@ -355,6 +356,60 @@ var BreezeConnect = function(params) {
             }
 
         }
+    }
+
+    self.parse_ohlc_data = function(data){
+        let split_data = data.split(",");
+        let parsed_data = {};
+        console.log(feedIntervalMap[split_data[8]]);
+        if(Boolean(["NSE","BSE"].includes(split_data[0]))){
+            parsed_data = {
+                "interval":feedIntervalMap[split_data[8]],
+                "exchange_code":split_data[0],
+                "stock_code":split_data[1],
+                "low":split_data[2],
+                "high":split_data[3],
+                "open":split_data[4],
+                "close":split_data[5],
+                "volume":split_data[6],
+                "datetime":split_data[7]
+            }
+        }
+        else if(Boolean(["NFO","NDX","MCX"].includes(split_data[0]))){
+            if(split_data.length == 13){
+                parsed_data = {
+                    "interval":feedIntervalMap[split_data[12]],
+                    "exchange_code":split_data[0],
+                    "stock_code":split_data[1],
+                    "expiry_date":split_data[2],
+                    "strike_price":split_data[3],
+                    "right_type":split_data[4],
+                    "low":split_data[5],
+                    "high":split_data[6],
+                    "open":split_data[7],
+                    "close":split_data[8],
+                    "volume":split_data[9],
+                    "oi":split_data[10],
+                    "datetime":split_data[11]
+                }
+            }
+            else{
+                parsed_data = {
+                    "interval":feedIntervalMap[split_data[10]],
+                    "exchange_code":split_data[0],
+                    "stock_code":split_data[1],
+                    "expiry_date":split_data[2],
+                    "low":split_data[3],
+                    "high":split_data[4],
+                    "open":split_data[5],
+                    "close":split_data[6],
+                    "volume":split_data[7],
+                    "oi":split_data[8],
+                    "datetime":split_data[9]
+                }
+            }
+        }
+        return parsed_data
     }
 
     self.parse_market_depth = function(data, exchange){
@@ -694,7 +749,7 @@ var BreezeConnect = function(params) {
             else{
                 var token_dict = self.get_stock_token_value({exchange_code:exchange_code, stock_code:stock_code, product_type:product_type, expiry_date:expiry_date, strike_price:strike_price, right:right, get_exchange_quotes:get_exchange_quotes, get_market_depth:get_market_depth})
                 if(interval!="")
-                    self.unwatch_stream_data(stock_token);
+                    self.unwatch_stream_data(stock_token["exch_quote_token"]);
                 else{
                     if(token_dict["exch_quote_token"] != false)
                         self.unwatch(token_dict["exch_quote_token"])
@@ -861,7 +916,6 @@ var BreezeConnect = function(params) {
                 return self.validation_error_response(responseMessage.BLANK_STOCK_CODE);
             }
             else if(exchange_code.toLowerCase() === "nfo") {
-                let pType = ["futures","options","futureplus","optionplus"];
                 if(product_type === "" || product_type === null) {
                       return self.validation_error_response(responseMessage.BLANK_PRODUCT_TYPE_NFO);
                 }
@@ -934,7 +988,7 @@ var BreezeConnect = function(params) {
             else if(stock_code === "" || stock_code === null) {
                 return self.validation_error_response(responseMessage.BLANK_STOCK_CODE);
             }
-            else if(!Boolean(typeList.DERI_EXCH_CODES.includes(exchange_code.toLowerCase()))) {
+            else if(Boolean(typeList.DERI_EXCH_CODES.includes(exchange_code.toLowerCase()))) {
                 if(product_type === "" || product_type === null) {
                     return self.validation_error_response(responseMessage.BLANK_PRODUCT_TYPE_HIST_V2);
                 }
@@ -948,19 +1002,13 @@ var BreezeConnect = function(params) {
                     return self.validation_error_response(responseMessage.BLANK_EXPIRY_DATE);
                 }
             }
-            if(interval === "1minute") {
-                interval = "minute";
-            }
-            else if(interval === "1day") {
-                interval = "day";
-            }
 
             let url_params = {
                 "interval": interval,
                 "from_date": from_date,
                 "to_date": to_date,
                 "stock_code": stock_code,
-                "exchange_code": exchange_code
+                "exch_code": exchange_code
             }
 
             if(product_type !== "" && product_type !== null) {
@@ -980,7 +1028,7 @@ var BreezeConnect = function(params) {
                 'X-SessionToken':self.api_session,
                 'apikey':self.appKey
             }
-            let response = await axios.get(urls.LIVE_OHLC_STREAM_URL,{
+            let response = await axios.get(urls.BREEZE_NEW_URL+apiEndpoint.HIST_CHART,{
                 params:url_params, headers:headers
             })
             return response.data;
