@@ -24,22 +24,22 @@ var BreezeConnect = function(params) {
     self.socket = null;
     self.socketOrder = null;
     self.socketOHLCV = null;
-    self.session_key = "";
-    self.api_session = "";
-    self.on_ticks = null;
-    self.stock_script_dict_list = [];
-    self.token_script_dict_list = [];
-    self.tux_to_user_value = tuxToUserMap;
+    self.sessionKey = "";
+    self.apiSession = "";
+    self.onTicks = null;
+    self.stockScriptDictList = [];
+    self.tokenScriptDictList = [];
+    self.tuxToUserValue = tuxToUserMap;
 
-    self.socket_connection_response = function(message){
+    self.socketConnectionResponse= function(message){
         return {"message":message};
     }
 
-    self.subscribe_exception = function(message){
+    self.subscribeException = function(message){
         throw message;
     }
 
-    self.validation_error_response = function(message){
+    self.validationErrorResponse = function(message){
         return {
                     "Success": "", 
                     "Status": 500, 
@@ -47,8 +47,8 @@ var BreezeConnect = function(params) {
                 };
     }
 
-    self.error_exception = function(func_name,error){
-        var message = `${func_name}() Error`;
+    self.errorException = function(funcName,error){
+        var message = `${funcName}() Error`;
         throw message + error.stack();
     }
 
@@ -65,7 +65,7 @@ var BreezeConnect = function(params) {
             self.socket = io.connect(urls.LIVE_STREAM_URL, {
                 auth: {
                     user: self.userId,
-                    token: self.session_key
+                    token: self.sessionKey
                 },
                 extraHeaders:{
                     "User-Agent": "node-socketio[client]/socket"
@@ -78,7 +78,7 @@ var BreezeConnect = function(params) {
             self.socketOrder = io.connect(urls.LIVE_FEEDS_URL,{
                 auth: {
                     user: self.userId,
-                    token: self.session_key,
+                    token: self.sessionKey,
                 },
                 extraHeaders:{
                     "User-Agent": "node-socketio[client]/socket"
@@ -91,7 +91,7 @@ var BreezeConnect = function(params) {
                 path:"/ohlcvstream/",
                 auth: {
                     user: self.userId,
-                    token: self.session_key,
+                    token: self.sessionKey,
                 },
                 extraHeaders:{
                     "User-Agent": "node-socketio[client]/socket"
@@ -102,39 +102,39 @@ var BreezeConnect = function(params) {
         
     };
 
-    self.on_disconnect = function() {
+    self.onDisconnect = function() {
         self.socket.disconnect();
     };
     
-    self.generate_session = async function (secretKey,session_key) {
-        self.session_key = session_key;
+    self.generateSession = async function (secretKey,sessionKey) {
+        self.sessionKey = sessionKey;
         self.secretKey = secretKey;
-        await self.api_util();
-        await self.get_stock_script_list();
+        await self.apiUtil();
+        await self.getStockScriptList();
     };
 
-    self.api_util = async function(){
+    self.apiUtil = async function(){
         try {
             
             headers = {
                 "Content-Type": "application/json"
             }
             body = {
-                "SessionToken": self.session_key,
+                "SessionToken": self.sessionKey,
                 "AppKey": self.appKey
             }
-            let response = await self.make_request(apiRequest.GET, apiEndpoint.CUST_DETAILS, body, headers);
+            let response = await self.makeRequest(apiRequest.GET, apiEndpoint.CUST_DETAILS, body, headers);
             if(response.data['Status']==500){
-                self.subscribe_exception(exceptionMessage.AUTHENICATION_EXCEPTION);
+                self.subscribeException(exceptionMessage.AUTHENICATION_EXCEPTION);
             }
             else{
-                self.api_session = response.data['Success']['session_token'];
-                decodedKey = Buffer.from(self.api_session,'base64').toString('ascii');
+                self.apiSession = response.data['Success']['session_token'];
+                decodedKey = Buffer.from(self.apiSession,'base64').toString('ascii');
                 self.userId = decodedKey.split(':')[0];
-                self.session_key = decodedKey.split(':')[1];
+                self.sessionKey = decodedKey.split(':')[1];
             }
         } catch (error) {
-            self.subscribe_exception(exceptionMessage.AUTHENICATION_EXCEPTION);
+            self.subscribeException(exceptionMessage.AUTHENICATION_EXCEPTION);
         }
     }
 
@@ -143,23 +143,23 @@ var BreezeConnect = function(params) {
             return;
         } 
         self.socket.emit("join", symbols);
-        self.socket.on('stock', self.on_message);
+        self.socket.on('stock', self.onMessage);
     };
 
-    self.on_ohlc_stream = function(data){
-        let parsed_data = self.parse_ohlc_data(data);
-        self.on_ticks(parsed_data);
+    self.onOhlcStream = function(data){
+        let parsedData = self.parseOhlcData(data);
+        self.onTicks(parsedData);
     }
 
-    self.watch_stream_data = function(symbols,channel){
+    self.watchStreamData = function(symbols,channel){
         if (!self.socketOHLCV) {
             return;
         } 
         self.socketOHLCV.emit("join", symbols);
-        self.socketOHLCV.on(channel, self.on_ohlc_stream);
+        self.socketOHLCV.on(channel, self.onOhlcStream);
     }
 
-    self.unwatch_stream_data = function (symbol) {
+    self.unwatchStreamData = function (symbol) {
         self.socketOHLCV.emit("leave", symbol);
     };
 
@@ -168,20 +168,20 @@ var BreezeConnect = function(params) {
         self.socket.on("stock", callback);
     };
 
-    self.on_message = function(data){
-        data = self.parse_data(data);
-        self.on_ticks(data);
+    self.onMessage = function(data){
+        data = self.parseData(data);
+        self.onTicks(data);
     }
 
     self.notify = function(){
-        self.socketOrder.on('order', self.on_message)
+        self.socketOrder.on('order', self.onMessage)
     }
 
     self.unwatch = function (symbol) {
         self.socket.emit("leave", symbol);
     };
 
-    self._ws_connect = function()
+    self.wsConnectOrder = function()
     {
         if(!self.socketOrder)
         {
@@ -189,230 +189,229 @@ var BreezeConnect = function(params) {
         }
     }
 
-    self.ws_connect = function(){
+    self.wsConnect = function(){
         if (!self.socket){
             self.connect({isOrder:false,isOHLCV:false});
             
         }
     }
     
-    self.ws_disconnect = function(){
+    self.wsDisconnect = function(){
         if(self.socket)
-            self.on_disconnect();
+            self.onDisconnect();
     }
 
-    self.get_data_from_stock_token_value = function(input_stock_token){
-        var output_data = {};
-        var stock_token = input_stock_token.split(".");
-        var exchange_type= stock_token[0];
-        var stock_token = stock_token[1].split("!")[1];
-        var exchange_code_list={
+    self.getDataFromStockTokenValue = function(inputStockToken){
+        var outputData = {};
+        var stockToken = inputStockToken.split(".");
+        var exchangeType= stockToken[0];
+        var stockToken = stockToken[1].split("!")[1];
+        var exchangeCodeList={
             "1":"BSE",
             "4":"NSE",
             "13":"NDX",
             "6":"MCX",
         };
 
-        var exchange_code_name = exchange_code_list[exchange_type] || false;
-        if(exchange_code_name == false)
-            self.subscribe_exception(exceptionMessage.WRONG_EXCHANGE_CODE_EXCEPTION);
-        else if(exchange_code_name.toLowerCase() == "bse"){
-            stock_data = self.token_script_dict_list[0][stock_token] || false;
-            if(stock_data == false)
-                self.subscribe_exception(exceptionMessage.STOCK_NOT_EXIST_EXCEPTION.format("BSE",input_stock_token));
+        var exchangeCodeName = exchangeCodeList[exchangeType] || false;
+        if(exchangeCodeName == false)
+            self.subscribeException(exceptionMessage.WRONG_EXCHANGE_CODE_EXCEPTION);
+        else if(exchangeCodeName.toLowerCase() == "bse"){
+            stockData = self.tokenScriptDictList[0][stockToken] || false;
+            if(stockData == false)
+                self.subscribeException(exceptionMessage.STOCK_NOT_EXIST_EXCEPTION.format("BSE",inputStockToken));
         }
-        else if(exchange_code_name.toLowerCase() == "nse"){
-            stock_data = self.token_script_dict_list[1][stock_token] || false;
-            if(stock_data == false){
-                stock_data = self.token_script_dict_list[4][stock_token] || false;
-                if(stock_data == false)
-                    self.subscribe_exception(exceptionMessage.STOCK_NOT_EXIST_EXCEPTION.format("i.e. NSE or NFO",input_stock_token));
+        else if(exchangeCodeName.toLowerCase() == "nse"){
+            stockData = self.tokenScriptDictList[1][stockToken] || false;
+            if(stockData == false){
+                stockData = self.tokenScriptDictList[4][stockToken] || false;
+                if(stockData == false)
+                    self.subscribeException(exceptionMessage.STOCK_NOT_EXIST_EXCEPTION.format("i.e. NSE or NFO",inputStockToken));
                 else
-                    exchange_code_name = "NFO";
+                    exchangeCodeName = "NFO";
             }
         }
-        else if(exchange_code_name.toLowerCase() == "ndx"){
-            stock_data = self.token_script_dict_list[2][stock_token] || false;
-            if(stock_data == false)
-                self.subscribe_exception(exceptionMessage.STOCK_NOT_EXIST_EXCEPTION.format("NDX",input_stock_token));
+        else if(exchangeCodeName.toLowerCase() == "ndx"){
+            stockData = self.tokenScriptDictList[2][stockToken] || false;
+            if(stockData == false)
+                self.subscribeException(exceptionMessage.STOCK_NOT_EXIST_EXCEPTION.format("NDX",inputStockToken));
         }
-        else if(exchange_code_name.toLowerCase() == "mcx"){
-            stock_data = self.token_script_dict_list[3][stock_token] || false;
-            if(stock_data == false)
-                self.subscribe_exception(exceptionMessage.STOCK_NOT_EXIST_EXCEPTION.format("MCX",input_stock_token));
+        else if(exchangeCodeName.toLowerCase() == "mcx"){
+            stockData = self.tokenScriptDictList[3][stockToken] || false;
+            if(stockData == false)
+                self.subscribeException(exceptionMessage.STOCK_NOT_EXIST_EXCEPTION.format("MCX",inputStockToken));
         }
-        output_data["stock_name"] = stock_data[1];
-        var exch_codes = ["nse","bse"]
-        if (!Boolean(exch_codes.includes(exchange_code.toLowerCase()))){
-            var product_type = stock_data[0].split("-")[0]
-            if(product_type.toLowerCase=="fut")
-                output_data["product_type"] = "Futures"
-            if(product_type.toLowerCase=="opt")
-                output_data["product_type"] = "Options"
-            var date_string = ""
-            for(let date of stock_data[0].split("-").slice(2,5))
-                date_string += date + "-"
-            output_data["strike_date"] = date_string.slice(0,-1)
-            if(stock_data[0].split("-")>5){
-                output_data["strike_price"] = stock_data[0].split("-")[5]
-                var right = stock_data[0].split("-")[6]
+        outputData["stock_name"] = stockData[1];
+        var exchCodes = ["nse","bse"];
+        if (!Boolean(exchCodes.includes(exchangeCode.toLowerCase()))){
+            var productType = stockData[0].split("-")[0];
+            if(productType.toLowerCase()=="fut")
+                outputData["product_type"] = "Futures";
+            if(productType.toLowerCase()=="opt")
+                outputData["product_type"] = "Options";
+            var dateString = ""
+            for(let date of stockData[0].split("-").slice(2,5))
+                dateString += date + "-";
+            outputData["strike_date"] = dateString.slice(0,-1);
+            if(stockData[0].split("-")>5){
+                outputData["strike_price"] = stockData[0].split("-")[5];
+                var right = stockData[0].split("-")[6];
                 if(right.toUpperCase()=="PE")
-                    output_data["right"] = "Put"
+                    outputData["right"] = "Put";
                 if(righttoUpperCase()=="CE")
-                    output_data["right"] = "Call"
+                    outputData["right"] = "Call";
             }
         }
-        return output_data
+        return outputData
     }
 
-    self.get_stock_token_value = function ({exchange_code="", stock_code="", product_type="", expiry_date="", strike_price="", right="", get_exchange_quotes=true, get_market_depth=true}) {
-        if (get_exchange_quotes === false && get_market_depth === false) {
-            self.subscribe_exception(exceptionMessage.QUOTE_DEPTH_EXCEPTION);
+    self.getStockTokenValue = function ({exchangeCode="", stockCode="", productType="", expiryDate="", strikePrice="", right="", getExchangeQuotes=true, getMarketDepth=true}) {
+        if (getExchangeQuotes === false && getMarketDepth === false) {
+            self.subscribeException(exceptionMessage.QUOTE_DEPTH_EXCEPTION);
         } else {
-            var exchange_code_name = "";
-            var exchange_code_list={
+            var exchangeCodeName = "";
+            var exchangeCodeList={
                 "BSE":"1.",
                 "NSE":"4.",
                 "NDX":"13.",
                 "MCX":"6.",
                 "NFO":"4.",
             };
-            var exchange_code_name = exchange_code_list[exchange_code] || false;
+            var exchangeCodeName = exchangeCodeList[exchangeCode] || false;
 
-            if(exchange_code_name === false) {
-                self.subscribe_exception(exceptionMessage.EXCHANGE_CODE_EXCEPTION);
+            if(exchangeCodeName === false) {
+                self.subscribeException(exceptionMessage.EXCHANGE_CODE_EXCEPTION);
             } 
-            else if(stock_code === "") {
-                self.subscribe_exception(exceptionMessage.EMPTY_STOCK_CODE_EXCEPTION);
+            else if(stockCode === "") {
+                self.subscribeException(exceptionMessage.EMPTY_STOCK_CODE_EXCEPTION);
             }
             else {
-                var token_value = false;
-                if(exchange_code.toLowerCase() === "bse") {
-                    var token_value = self.stock_script_dict_list[0][stock_code] || false;
+                var tokenValue = false;
+                if(exchangeCode.toLowerCase() === "bse") {
+                    var tokenValue = self.stockScriptDictList[0][stockCode] || false;
                 }
-                else if(exchange_code.toLowerCase() === "nse"){
-                    token_value = self.stock_script_dict_list[1][stock_code] || false;
+                else if(exchangeCode.toLowerCase() === "nse"){
+                    tokenValue = self.stockScriptDictList[1][stockCode] || false;
                 }
                 else {
-                    if(expiry_date === "") {
-                        self.subscribe_exception(exceptionMessage.EXPIRY_DATE_EXCEPTION);
+                    if(expiryDate === "") {
+                        self.subscribeException(exceptionMessage.EXPIRY_DATE_EXCEPTION);
                     }
-                    if(product_type.toLowerCase() === "futures") {
-                        var contract_detail_value = "FUT"
+                    if(productType.toLowerCase() === "futures") {
+                        var contractDetailValue = "FUT"
                     }
-                    else if(product_type.toLowerCase() === "options") {
-                        contract_detail_value = "OPT"
+                    else if(productType.toLowerCase() === "options") {
+                        var contractDetailValue = "OPT"
                     }
                     else {
-                        self.subscribe_exception(exceptionMessage.PRODUCT_TYPE_EXCEPTION);
+                        self.subscribeException(exceptionMessage.PRODUCT_TYPE_EXCEPTION);
                     }
 
-                    contract_detail_value = contract_detail_value + "-" + stock_code + "-" + expiry_date
+                    contractDetailValue = contractDetailValue + "-" + stockCode + "-" + expiryDate
 
-                    if(product_type.toLowerCase() === "options") {
-                        if(strike_price !== "") {
-                            contract_detail_value = contract_detail_value + "-" + strike_price;
+                    if(productType.toLowerCase() === "options") {
+                        if(strikePrice !== "") {
+                            contractDetailValue = contractDetailValue + "-" + strikePrice;
                         }
-                        else if(strike_price === "" && product_type.toLowerCase() === "options") {
-                            self.subscribe_exception(exceptionMessage.STRIKE_PRICE_EXCEPTION);
+                        else if(strikePrice === "" && productType.toLowerCase() === "options") {
+                            self.subscribeException(exceptionMessage.STRIKE_PRICE_EXCEPTION);
                         }
 
                         if(right.toLowerCase() === "put") {
-                            contract_detail_value = contract_detail_value + "-" + "PE";
+                            contractDetailValue = contractDetailValue + "-" + "PE";
                         }
                         else if(right.toLowerCase() === "call") {
-                            contract_detail_value = contract_detail_value + "-" + "CE"
+                            contractDetailValue = contractDetailValue + "-" + "CE"
                         }
-                        else if(product_type.toLowerCase() === "options") {
-                            self.subscribe_exception(exceptionMessage.RIGHT_EXCEPTION);
+                        else if(productType.toLowerCase() === "options") {
+                            self.subscribeException(exceptionMessage.RIGHT_EXCEPTION);
                         }
                     }
-                    if(exchange_code.toLowerCase() === "ndx") {
-                        token_value = self.stock_script_dict_list[2][contract_detail_value] || false;
+                    if(exchangeCode.toLowerCase() === "ndx") {
+                        tokenValue = self.stockScriptDictList[2][contract_detail_value] || false;
                     }
-                    else if(exchange_code.toLowerCase() === "mcx") {
-                        token_value = self.stock_script_dict_list[3][contract_detail_value] || false;
+                    else if(exchangeCode.toLowerCase() === "mcx") {
+                        tokenValue = self.stockScriptDictList[3][contract_detail_value] || false;
                     }
-                    else if(exchange_code.toLowerCase() === "nfo") {
-                        token_value = self.stock_script_dict_list[4][contract_detail_value] || false;
+                    else if(exchangeCode.toLowerCase() === "nfo") {
+                        tokenValue = self.stockScriptDictList[4][contract_detail_value] || false;
                     }
                 }
-                if(token_value === false) {
-                    self.subscribe_exception(exceptionMessage.STOCK_INVALID_EXCEPTION);
+                if(tokenValue === false) {
+                    self.subscribeException(exceptionMessage.STOCK_INVALID_EXCEPTION);
                 }
                 
-                var exchange_quotes_token_value = false;
-                if(get_exchange_quotes !== false) {
-                    exchange_quotes_token_value = exchange_code_name + "1!" + token_value;
+                var exchangeQuotesTokenValue = false;
+                if(getExchangeQuotes !== false) {
+                    exchangeQuotesTokenValue = exchangeCodeName + "1!" + tokenValue;
                 }
 
-                var market_depth_token_value = false;
-                if(get_market_depth !== false) {
-                    market_depth_token_value = exchange_code_name + "2!" + token_value;
+                var marketDepthTokenValue = false;
+                if(getMarketDepth !== false) {
+                    marketDepthTokenValue = exchangeCodeName + "2!" + tokenValue;
                 }
 
-                return {"exch_quote_token":exchange_quotes_token_value,"market_depth_token": market_depth_token_value};
+                return {"exch_quote_token":exchangeQuotesTokenValue,"market_depth_token": marketDepthTokenValue};
 
             }
 
         }
     }
 
-    self.parse_ohlc_data = function(data){
-        let split_data = data.split(",");
-        let parsed_data = {};
-        console.log(feedIntervalMap[split_data[8]]);
-        if(Boolean(["NSE","BSE"].includes(split_data[0]))){
-            parsed_data = {
-                "interval":feedIntervalMap[split_data[8]],
-                "exchange_code":split_data[0],
-                "stock_code":split_data[1],
-                "low":split_data[2],
-                "high":split_data[3],
-                "open":split_data[4],
-                "close":split_data[5],
-                "volume":split_data[6],
-                "datetime":split_data[7]
+    self.parseOhlcData = function(data){
+        let splitData = data.split(",");
+        let parsedData = {};
+        if(Boolean(["NSE","BSE"].includes(splitData[0]))){
+            parsedData = {
+                "interval":feedIntervalMap[splitData[8]],
+                "exchange_code":splitData[0],
+                "stock_code":splitData[1],
+                "low":splitData[2],
+                "high":splitData[3],
+                "open":splitData[4],
+                "close":splitData[5],
+                "volume":splitData[6],
+                "datetime":splitData[7]
             }
         }
-        else if(Boolean(["NFO","NDX","MCX"].includes(split_data[0]))){
-            if(split_data.length == 13){
-                parsed_data = {
-                    "interval":feedIntervalMap[split_data[12]],
-                    "exchange_code":split_data[0],
-                    "stock_code":split_data[1],
-                    "expiry_date":split_data[2],
-                    "strike_price":split_data[3],
-                    "right_type":split_data[4],
-                    "low":split_data[5],
-                    "high":split_data[6],
-                    "open":split_data[7],
-                    "close":split_data[8],
-                    "volume":split_data[9],
-                    "oi":split_data[10],
-                    "datetime":split_data[11]
+        else if(Boolean(["NFO","NDX","MCX"].includes(splitData[0]))){
+            if(splitData.length == 13){
+                parsedData = {
+                    "interval":feedIntervalMap[splitData[12]],
+                    "exchange_code":splitData[0],
+                    "stock_code":splitData[1],
+                    "expiry_date":splitData[2],
+                    "strike_price":splitData[3],
+                    "right_type":splitData[4],
+                    "low":splitData[5],
+                    "high":splitData[6],
+                    "open":splitData[7],
+                    "close":splitData[8],
+                    "volume":splitData[9],
+                    "oi":splitData[10],
+                    "datetime":splitData[11]
                 }
             }
             else{
-                parsed_data = {
-                    "interval":feedIntervalMap[split_data[10]],
-                    "exchange_code":split_data[0],
-                    "stock_code":split_data[1],
-                    "expiry_date":split_data[2],
-                    "low":split_data[3],
-                    "high":split_data[4],
-                    "open":split_data[5],
-                    "close":split_data[6],
-                    "volume":split_data[7],
-                    "oi":split_data[8],
-                    "datetime":split_data[9]
+                parsedData = {
+                    "interval":feedIntervalMap[splitData[10]],
+                    "exchange_code":splitData[0],
+                    "stock_code":splitData[1],
+                    "expiry_date":splitData[2],
+                    "low":splitData[3],
+                    "high":splitData[4],
+                    "open":splitData[5],
+                    "close":splitData[6],
+                    "volume":splitData[7],
+                    "oi":splitData[8],
+                    "datetime":splitData[9]
                 }
             }
         }
-        return parsed_data
+        return parsedData
     }
 
-    self.parse_market_depth = function(data, exchange){
+    self.parseMarketDepth = function(data, exchange){
         var depth = []
         var counter = 0;
         for(let lis of data){
@@ -440,7 +439,7 @@ var BreezeConnect = function(params) {
         return depth;
     }
 
-    self.parse_data = function(data){
+    self.parseData = function(data){
         if(data !== null && data !== undefined && typeof(data[0]) !== String && data[0].indexOf('!') < 0){
             var order_dict = {}
             order_dict["sourceNumber"] = data[0]                            //Source Number
@@ -459,12 +458,12 @@ var BreezeConnect = function(params) {
             order_dict["orderExchangeCode"] = data[13]                      //Exchange Code
             if(data[11] == '4' || data[11] == '5'){
                 order_dict["stockCode"] = data[14]                     //Stock Code
-                order_dict["orderFlow"] = self.tux_to_user_value['orderFlow'][data[15].toString().toUpperCase()] || data[15].toString()          // Order Flow
-                order_dict["limitMarketFlag"] = self.tux_to_user_value['limitMarketFlag'][data[16].toString().toUpperCase()] || data[16].toString()             //Limit Market Flag
-                order_dict["orderType"] = self.tux_to_user_value['orderType'][data[17].toString().toUpperCase()] || data[17].toString()                          //OrderType
+                order_dict["orderFlow"] = self.tuxToUserValue['orderFlow'][data[15].toString().toUpperCase()] || data[15].toString()          // Order Flow
+                order_dict["limitMarketFlag"] = self.tuxToUserValue['limitMarketFlag'][data[16].toString().toUpperCase()] || data[16].toString()             //Limit Market Flag
+                order_dict["orderType"] = self.tuxToUserValue['orderType'][data[17].toString().toUpperCase()] || data[17].toString()                          //OrderType
                 order_dict["orderLimitRate"] = data[18]                     //Limit Rate
-                order_dict["productType"] = self.tux_to_user_value['productType'][data[19].toString().toUpperCase()] || data[19].toString()     //Product Type
-                order_dict["orderStatus"] = self.tux_to_user_value['orderStatus'][data[20].toString().toUpperCase()] || data[20].toString()     // Order Status
+                order_dict["productType"] = self.tuxToUserValue['productType'][data[19].toString().toUpperCase()] || data[19].toString()     //Product Type
+                order_dict["orderStatus"] = self.tuxToUserValue['orderStatus'][data[20].toString().toUpperCase()] || data[20].toString()     // Order Status
                 order_dict["orderDate"] = data[21]                          //Order  Date
                 order_dict["orderTradeDate"] = data[22]                     //Trade Date
                 order_dict["orderReference"] = data[23]                     //Order Reference
@@ -493,17 +492,17 @@ var BreezeConnect = function(params) {
             }
             else if(data[11] == '6' || data[11] == '7'){
                 order_dict["stockCode"] = data[14]                         //stock code
-                order_dict["productType"] =  self.tux_to_user_value['productType'][data[15].toString().toUpperCase()] || data[15].toString()   //Product Type
-                order_dict["optionType"] = self.tux_to_user_value['optionType'][data[16].toString().toUpperCase()] || data[16].toString()      //Option T
+                order_dict["productType"] =  self.tuxToUserValue['productType'][data[15].toString().toUpperCase()] || data[15].toString()   //Product Type
+                order_dict["optionType"] = self.tuxToUserValue['optionType'][data[16].toString().toUpperCase()] || data[16].toString()      //Option T
                 order_dict["exerciseType"] = data[17]                       //Exercise Type
                 order_dict["strikePrice"] = data[18]                        //Strike Price
                 order_dict["expiryDate"] = data[19]                         //Expiry Date
                 order_dict["orderValidDate"] = data[20]                     //Order Valid Date
-                order_dict["orderFlow"] = self.tux_to_user_value['orderFlow'][data[21].toString().toUpperCase()] || data[21].toString()                //Order  Flow
-                order_dict["limitMarketFlag"] = self.tux_to_user_value['limitMarketFlag'][data[22].toString().toUpperCase()] || data[22].toString()     //Limit Market Flag
-                order_dict["orderType"] = self.tux_to_user_value['orderType'][data[23].toString().toUpperCase()] || data[23].toString()                 //Order Type
+                order_dict["orderFlow"] = self.tuxToUserValue['orderFlow'][data[21].toString().toUpperCase()] || data[21].toString()                //Order  Flow
+                order_dict["limitMarketFlag"] = self.tuxToUserValue['limitMarketFlag'][data[22].toString().toUpperCase()] || data[22].toString()     //Limit Market Flag
+                order_dict["orderType"] = self.tuxToUserValue['orderType'][data[23].toString().toUpperCase()] || data[23].toString()                 //Order Type
                 order_dict["limitRate"] = data[24]                          //Limit Rate
-                order_dict["orderStatus"] = self.tux_to_user_value['orderStatus'][data[25].toString().toUpperCase()] || data[25].toString()              //Order Status
+                order_dict["orderStatus"] = self.tuxToUserValue['orderStatus'][data[25].toString().toUpperCase()] || data[25].toString()              //Order Status
                 order_dict["orderReference"] = data[26]                     //Order Reference
                 order_dict["orderTotalQuantity"] = data[27]                 //Order Total Quantity
                 order_dict["executedQuantity"] = data[28]                   //Executed Quantity
@@ -531,47 +530,47 @@ var BreezeConnect = function(params) {
             return order_dict;
         }
         var exchange = data[0].split('!')[0].split('.')[0]
-        var data_type = data[0].split('!')[0].split('.')[1];
+        var dataType = data[0].split('!')[0].split('.')[1];
         if(exchange == '6'){
-            var data_dict = {};
-            data_dict["Symbol"] = data[0];
-            data_dict["AndiOPVolume"] = data[1];
-            data_dict["Reserved"] = data[2];
-            data_dict["IndexFlag"] = data[3];
-            data_dict["ttq"] = data[4];
-            data_dict["last"] = data[5];
-            data_dict["ltq"] = data[6];
-            data_dict["ltt"] = (new Date(data[7]*1000)).toString().replace(" GMT+0530 (India Standard Time)",'');
-            data_dict["AvgTradedPrice"] = data[8];
-            data_dict["TotalBuyQnt"] = data[9];
-            data_dict["TotalSellQnt"] = data[10];
-            data_dict["ReservedStr"] = data[11];
-            data_dict["ClosePrice"] = data[12];
-            data_dict["OpenPrice"] = data[13];
-            data_dict["HighPrice"] = data[14];
-            data_dict["LowPrice"] = data[15];
-            data_dict["ReservedShort"] = data[16];
-            data_dict["CurrOpenInterest"] = data[17];
-            data_dict["TotalTrades"] = data[18];
-            data_dict["HightestPriceEver"] = data[19];
-            data_dict["LowestPriceEver"] = data[20];
-            data_dict["TotalTradedValue"] = data[21];
+            var dataDict = {};
+            dataDict["Symbol"] = data[0];
+            dataDict["AndiOPVolume"] = data[1];
+            dataDict["Reserved"] = data[2];
+            dataDict["IndexFlag"] = data[3];
+            dataDict["ttq"] = data[4];
+            dataDict["last"] = data[5];
+            dataDict["ltq"] = data[6];
+            dataDict["ltt"] = (new Date(data[7]*1000)).toString().replace(" GMT+0530 (India Standard Time)",'');
+            dataDict["AvgTradedPrice"] = data[8];
+            dataDict["TotalBuyQnt"] = data[9];
+            dataDict["TotalSellQnt"] = data[10];
+            dataDict["ReservedStr"] = data[11];
+            dataDict["ClosePrice"] = data[12];
+            dataDict["OpenPrice"] = data[13];
+            dataDict["HighPrice"] = data[14];
+            dataDict["LowPrice"] = data[15];
+            dataDict["ReservedShort"] = data[16];
+            dataDict["CurrOpenInterest"] = data[17];
+            dataDict["TotalTrades"] = data[18];
+            dataDict["HightestPriceEver"] = data[19];
+            dataDict["LowestPriceEver"] = data[20];
+            dataDict["TotalTradedValue"] = data[21];
             marketDepthIndex = 0
             let i=0;
             for(i=22;i<data.length;i++){
-                data_dict["Quantity-"+marketDepthIndex.toString()] = data[i][0]
-                data_dict["OrderPrice-"+marketDepthIndex.toString()] = data[i][1]
-                data_dict["TotalOrders-"+marketDepthIndex.toString()] = data[i][2]
-                data_dict["Reserved-"+marketDepthIndex.toString()] = data[i][3]
-                data_dict["SellQuantity-"+marketDepthIndex.toString()] = data[i][4]
-                data_dict["SellOrderPrice-"+marketDepthIndex.toString()] = data[i][5]
-                data_dict["SellTotalOrders-"+marketDepthIndex.toString()] = data[i][6]
-                data_dict["SellReserved-"+marketDepthIndex.toString()] = data[i][7]
+                dataDict["Quantity-"+marketDepthIndex.toString()] = data[i][0]
+                dataDict["OrderPrice-"+marketDepthIndex.toString()] = data[i][1]
+                dataDict["TotalOrders-"+marketDepthIndex.toString()] = data[i][2]
+                dataDict["Reserved-"+marketDepthIndex.toString()] = data[i][3]
+                dataDict["SellQuantity-"+marketDepthIndex.toString()] = data[i][4]
+                dataDict["SellOrderPrice-"+marketDepthIndex.toString()] = data[i][5]
+                dataDict["SellTotalOrders-"+marketDepthIndex.toString()] = data[i][6]
+                dataDict["SellReserved-"+marketDepthIndex.toString()] = data[i][7]
                 marketDepthIndex += 1
             }
         }
-        else if(data_type == '1'){
-            var data_dict = {
+        else if(dataType == '1'){
+            var dataDict = {
                 "symbol": data[0],
                 "open": data[1],
                 "last": data[2],
@@ -588,56 +587,56 @@ var BreezeConnect = function(params) {
             }
             // For NSE & BSE conversion
             if(data.length == 21){
-                data_dict["ttq"] = data[12]
-                data_dict["totalBuyQt"] = data[13]
-                data_dict["totalSellQ"] = data[14]
-                data_dict["ttv"] = data[15]
-                data_dict["trend"] = data[16]
-                data_dict["lowerCktLm"] = data[17]
-                data_dict["upperCktLm"] = data[18]
-                data_dict["ltt"] = (new Date(data[19]*1000)).toString().replace(" GMT+0530 (India Standard Time)",'')
-                data_dict["close"] = data[20]
+                dataDict["ttq"] = data[12]
+                dataDict["totalBuyQt"] = data[13]
+                dataDict["totalSellQ"] = data[14]
+                dataDict["ttv"] = data[15]
+                dataDict["trend"] = data[16]
+                dataDict["lowerCktLm"] = data[17]
+                dataDict["upperCktLm"] = data[18]
+                dataDict["ltt"] = (new Date(data[19]*1000)).toString().replace(" GMT+0530 (India Standard Time)",'')
+                dataDict["close"] = data[20]
             }
             // For FONSE & CDNSE conversion
             else if(data.length == 23){
-                data_dict["OI"] = data[12]
-                data_dict["CHNGOI"] = data[13]
-                data_dict["ttq"] = data[14]
-                data_dict["totalBuyQt"] = data[15]
-                data_dict["totalSellQ"] = data[16]
-                data_dict["ttv"] = data[17]
-                data_dict["trend"] = data[18]
-                data_dict["lowerCktLm"] = data[19]
-                data_dict["upperCktLm"] = data[20]
-                data_dict["ltt"] = (new Date(data[21]*1000)).toString().replace(" GMT+0530 (India Standard Time)",'')
-                data_dict["close"] = data[22]
+                dataDict["OI"] = data[12]
+                dataDict["CHNGOI"] = data[13]
+                dataDict["ttq"] = data[14]
+                dataDict["totalBuyQt"] = data[15]
+                dataDict["totalSellQ"] = data[16]
+                dataDict["ttv"] = data[17]
+                dataDict["trend"] = data[18]
+                dataDict["lowerCktLm"] = data[19]
+                dataDict["upperCktLm"] = data[20]
+                dataDict["ltt"] = (new Date(data[21]*1000)).toString().replace(" GMT+0530 (India Standard Time)",'')
+                dataDict["close"] = data[22]
             }
         }
         else{
-            var data_dict = {
+            var dataDict = {
                 "symbol": data[0],
                 "time": (new Date(data[1]*1000)).toString().replace(" GMT+0530 (India Standard Time)",''),
-                "depth": self.parse_market_depth(data[2], exchange),
+                "depth": self.parseMarketDepth(data[2], exchange),
                 "quotes": "Market Depth"
             }
         }
         if(exchange == '4' && data.length == 21)
-            data_dict['exchange'] = 'NSE Equity'
+            dataDict['exchange'] = 'NSE Equity'
         else if(exchange == '1')
-            data_dict['exchange'] = 'BSE'
+            dataDict['exchange'] = 'BSE'
         else if(exchange == '13')
-            data_dict['exchange'] = 'NSE Currency'
+            dataDict['exchange'] = 'NSE Currency'
         else if(exchange == '4' && data.length == 23)
-            data_dict['exchange'] = 'NSE Futures & Options'
+            dataDict['exchange'] = 'NSE Futures & Options'
         else if(exchange == '6')
-            data_dict['exchange'] = 'Commodity'
-        return data_dict
+            dataDict['exchange'] = 'Commodity'
+        return dataDict
     }
 
-    self.get_stock_script_list= async function(){
+    self.getStockScriptList= async function(){
         try{
-            self.stock_script_dict_list = [{},{},{},{},{}]
-            self.token_script_dict_list = [{},{},{},{},{}]
+            self.stockScriptDictList = [{},{},{},{},{}]
+            self.tokenScriptDictList = [{},{},{},{},{}]
 
             var download = await axios.get(url=urls.STOCK_SCRIPT_CSV_URL)
                             .then(function(resp){return resp});
@@ -646,24 +645,24 @@ var BreezeConnect = function(params) {
             for (let row_string of my_list){
                 var row = row_string.split(',')
                 if(row[2] == "BSE"){
-                    self.stock_script_dict_list[0][row[3]]=row[5]
-                    self.token_script_dict_list[0][row[5]]=[row[3],row[1]]
+                    self.stockScriptDictList[0][row[3]]=row[5]
+                    self.tokenScriptDictList[0][row[5]]=[row[3],row[1]]
                 }
                 else if(row[2] == "NSE"){
-                    self.stock_script_dict_list[1][row[3]]=row[5]
-                    self.token_script_dict_list[1][row[5]]=[row[3],row[1]]
+                    self.stockScriptDictList[1][row[3]]=row[5]
+                    self.tokenScriptDictList[1][row[5]]=[row[3],row[1]]
                 }
                 else if(row[2] == "NDX"){
-                    self.stock_script_dict_list[2][row[7]]=row[5]
-                    self.token_script_dict_list[2][row[5]]=[row[7],row[1]]
+                    self.stockScriptDictList[2][row[7]]=row[5]
+                    self.tokenScriptDictList[2][row[5]]=[row[7],row[1]]
                 }
                 else if(row[2] == "MCX"){
-                    self.stock_script_dict_list[3][row[7]]=row[5]
-                    self.token_script_dict_list[3][row[5]]=[row[7],row[1]]
+                    self.stockScriptDictList[3][row[7]]=row[5]
+                    self.tokenScriptDictList[3][row[5]]=[row[7],row[1]]
                 }
                 else if(row[2] == "NFO"){
-                    self.stock_script_dict_list[4][row[7]]=row[5]
-                    self.token_script_dict_list[4][row[5]]=[row[7],row[1]]
+                    self.stockScriptDictList[4][row[7]]=row[5]
+                    self.tokenScriptDictList[4][row[5]]=[row[7],row[1]]
                 }
             }
         }catch(error){
@@ -671,114 +670,114 @@ var BreezeConnect = function(params) {
         }
     }
 
-    self.subscribe_feeds = async function({stock_token="", exchange_code="", stock_code="", product_type="", expiry_date="", strike_price="", right="", get_exchange_quotes=true, get_market_depth=true, get_order_notification=false,interval=""}){
+    self.subscribeFeeds = async function({stockToken="", exchangeCode="", stockCode="", productType="", expiryDate="", strikePrice="", right="", getExchangeQuotes=true, getMarketDepth=true, getOrderNotification=false,interval=""}){
         if(interval != ""){
             if(!Boolean(typeList.INTERVAL_TYPES_STREAM_OHLC.includes(interval.toLowerCase())))
-                self.socket_connection_response(exceptionMessage.STREAM_OHLC_INTERVAL_ERROR);
+                self.socketConnectionResponse(exceptionMessage.STREAM_OHLC_INTERVAL_ERROR);
             else
                 interval = channelIntervalMap[interval];
         }
         if(self.socket){
             var return_object = {}
-            if(get_order_notification == true){
-                self._ws_connect();
+            if(getOrderNotification == true){
+                self.wsConnectOrder();
                 self.notify()
-                return_object = self.socket_connection_response(responseMessage.ORDER_NOTIFICATION_SUBSCRIBED)
+                return_object = self.socketConnectionResponse(responseMessage.ORDER_NOTIFICATION_SUBSCRIBED)
             }
-            if(stock_token != ""){
+            if(stockToken != ""){
                 if(interval!=""){
                     if(self.socketOHLCV==null){
                         self.connect({isOHLCV:true})
                     }
-                    self.watch_stream_data(stock_token,interval)
+                    self.watchStreamData(stockToken,interval)
                 }
                 else
-                    self.watch(stock_token)
-                return_object = self.socket_connection_response(responseMessage.STOCK_SUBSCRIBE_MESSAGE.format(stock_token));
+                    self.watch(stockToken)
+                return_object = self.socketConnectionResponse(responseMessage.STOCK_SUBSCRIBE_MESSAGE.format(stockToken));
             }
-            else if(get_order_notification == true && exchange_code == ""){
+            else if(getOrderNotification == true && exchangeCode == ""){
                 return return_object
             }
             else{
-                var token_dict = self.get_stock_token_value({exchange_code:exchange_code, stock_code:stock_code, product_type:product_type, expiry_date:expiry_date, strike_price:strike_price, right:right, get_exchange_quotes:get_exchange_quotes, get_market_depth:get_market_depth});
+                var tokenDict = self.getStockTokenValue({exchangeCode:exchangeCode, stockCode:stockCode, productType:productType, expiryDate:expiryDate, strikePrice:strikePrice, right:right, getExchangeQuotes:getExchangeQuotes, getMarketDepth:getMarketDepth});
                 if(interval!=""){
                     if(self.socketOHLCV==null){
                         self.connect({isOHLCV:true});
                     }
-                    self.watch_stream_data(token_dict["exch_quote_token"],interval);
+                    self.watchStreamData(tokenDict["exch_quote_token"],interval);
                 }
                 else{
-                    if(token_dict["exch_quote_token"] != false)
-                        self.watch(token_dict["exch_quote_token"]);
-                    if( token_dict["market_depth_token"] != false)
-                        self.watch(token_dict["market_depth_token"]);
+                    if(tokenDict["exch_quote_token"] != false)
+                        self.watch(tokenDict["exch_quote_token"]);
+                    if( tokenDict["market_depth_token"] != false)
+                        self.watch(tokenDict["market_depth_token"]);
                 }
-                return_object = self.socket_connection_response(responseMessage.STOCK_SUBSCRIBE_MESSAGE.format(stock_code));
+                return_object = self.socketConnectionResponse(responseMessage.STOCK_SUBSCRIBE_MESSAGE.format(stockCode));
             }
             return return_object
         }
     }
 
-    self.unsubscribe_feeds = async function({stock_token="", exchange_code="", stock_code="", product_type="", expiry_date="", strike_price="", right="", interval="",get_exchange_quotes=true, get_market_depth=true, get_order_notification=false}){
+    self.unsubscribeFeeds = async function({stockToken="", exchangeCode="", stockCode="", productType="", expiryDate="", strikePrice="", right="", interval="",getExchangeQuotes=true, getMarketDepth=true, getOrderNotification=false}){
         if(interval != ""){
             if(!Boolean(typeList.INTERVAL_TYPES_STREAM_OHLC.includes(interval.toLowerCase())))
-                self.socket_connection_response(exceptionMessage.STREAM_OHLC_INTERVAL_ERROR);
+                self.socketConnectionResponse(exceptionMessage.STREAM_OHLC_INTERVAL_ERROR);
             else
                 interval = channelIntervalMap[interval];
         }
-        if(get_order_notification==true)
+        if(getOrderNotification==true)
         {
             if(self.socketOrder)
             {
                 self.socketOrder = null;
-                return self.socket_connection_response(responseMessage.ORDER_REFRESH_DISCONNECTED);
+                return self.socketConnectionResponse(responseMessage.ORDER_REFRESH_DISCONNECTED);
             }
             else{
-                return self.socket_connection_response(responseMessage.ORDER_REFRESH_NOT_CONNECTED);
+                return self.socketConnectionResponse(responseMessage.ORDER_REFRESH_NOT_CONNECTED);
             }
         }
         
         else if(self.socket){
-            if(stock_token!=""){
+            if(stockToken!=""){
                 if(interval!="")
-                    self.unwatch_stream_data(stock_token);
+                    self.unwatch_stream_data(stockToken);
                 else
-                    self.unwatch(stock_token);
-                return self.socket_connection_response(responseMessage.STOCK_UNSUBSCRIBE_MESSAGE.format(stock_token));
+                    self.unwatch(stockToken);
+                return self.socketConnectionResponse(responseMessage.STOCK_UNSUBSCRIBE_MESSAGE.format(stockToken));
             }
             else{
-                var token_dict = self.get_stock_token_value({exchange_code:exchange_code, stock_code:stock_code, product_type:product_type, expiry_date:expiry_date, strike_price:strike_price, right:right, get_exchange_quotes:get_exchange_quotes, get_market_depth:get_market_depth})
+                var tokenDict = self.getStockTokenValue({exchangeCode:exchangeCode, stockCode:stockCode, productType:productType, expiryDate:expiryDate, strikePrice:strikePrice, right:right, getExchangeQuotes:getExchangeQuotes, getMarketDepth:getMarketDepth})
                 if(interval!="")
-                    self.unwatch_stream_data(stock_token["exch_quote_token"]);
+                    self.unwatch_stream_data(stockToken["exch_quote_token"]);
                 else{
-                    if(token_dict["exch_quote_token"] != false)
-                        self.unwatch(token_dict["exch_quote_token"])
-                    if( token_dict["market_depth_token"] != false)
-                        self.unwatch(token_dict["market_depth_token"])
+                    if(tokenDict["exch_quote_token"] != false)
+                        self.unwatch(tokenDict["exch_quote_token"])
+                    if( tokenDict["market_depth_token"] != false)
+                        self.unwatch(tokenDict["market_depth_token"])
                 }
-                return self.socket_connection_response(responseMessage.STOCK_UNSUBSCRIBE_MESSAGE.format(stock_code));
+                return self.socketConnectionResponse(responseMessage.STOCK_UNSUBSCRIBE_MESSAGE.format(stockCode));
             }
         }
     }
 
-    self.generate_headers = function(body) {
+    self.generateHeaders = function(body) {
         try {
-            var current_date = new Date().toISOString().split(".")[0] + '.000Z';
-            let checksum = sha256(current_date+JSON.stringify(body)+self.secretKey);
+            var currentDate = new Date().toISOString().split(".")[0] + '.000Z';
+            let checksum = sha256(currentDate+JSON.stringify(body)+self.secretKey);
             headers = {
                 "Content-Type": "application/json",
                 'X-Checksum': "token "+checksum,
-                'X-Timestamp': current_date,
+                'X-Timestamp': currentDate,
                 'X-AppKey': self.appKey,
-                'X-SessionToken': self.api_session
+                'X-SessionToken': self.apiSession
             }
             return headers;
         } catch (error) {
-            self.error_exception("generate_headers", error);
+            self.errorException("generateHeaders", error);
         }
     };
 
-    self.make_request = async function(method, endpoint, body, header) {
+    self.makeRequest = async function(method, endpoint, body, header) {
         try {
 
             let url = urls.API_URL + endpoint;
@@ -811,16 +810,16 @@ var BreezeConnect = function(params) {
                 return res;
             }
         } catch (error) {
-            self.error_exception(exceptionMessage.API_REQUEST_EXCEPTION.format(method,url), error);
+            self.errorException(exceptionMessage.API_REQUEST_EXCEPTION.format(method,url), error);
         }
     };
 
 
-    self.get_customer_details = async function(session_token="") {
+    self.getCustomerDetails = async function(session_token="") {
         try {
-            let response = self.validation_error_response("");
+            let response = self.validationErrorResponse("");
             if(session_token === "" || session_token === null) {
-                return self.validation_error_response(responseMessage.API_SESSION_ERROR);
+                return self.validationErrorResponse(responseMessage.API_SESSION_ERROR);
             }
             headers = {
                 "Content-Type": "application/json"
@@ -829,104 +828,104 @@ var BreezeConnect = function(params) {
                 "SessionToken": session_token,
                 "AppKey": self.appKey,
             }
-            response = await self.make_request(apiRequest.GET, apiEndpoint.CUST_DETAILS, body, headers);
+            response = await self.makeRequest(apiRequest.GET, apiEndpoint.CUST_DETAILS, body, headers);
             delete response.data['Success']['session_token'];
             return(response.data);
            
         } catch (error) {
-            self.error_exception("get_customer_details", error);
+            self.errorException("getCustomerDetails", error);
         }
     };
 
-    self.get_demat_holdings = async function() {
+    self.getDematHoldings = async function() {
         try {
             let body = {}
-            headers = self.generate_headers(body);
-            let response = await self.make_request(apiRequest.GET, apiEndpoint.DEMAT_HOLDING, body, headers);
+            headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.GET, apiEndpoint.DEMAT_HOLDING, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("get_demat_holdings", error);
+            self.errorException("getDematHoldings", error);
         }
     };  
 
-    self.get_funds = async function() {
+    self.getFunds = async function() {
         try {
             let body = {}
-            headers = self.generate_headers(body);
-            let response = await self.make_request(apiEndpoint.GET, apiEndpoint.FUND, body, headers);
+            headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiEndpoint.GET, apiEndpoint.FUND, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("get_funds", error);
+            self.errorException("getFunds", error);
         }
     };
 
-    self.set_funds = async function({transaction_type="", amount="", segment=""}) {
+    self.setFunds = async function({transactionType="", amount="", segment=""}) {
         try {
-            if(transaction_type === "" || transaction_type === null || amount === "" || amount === null || segment === "" || segment === null) {
-                if(transaction_type === "" || transaction_type === null) {
-                    return self.validation_error_response(responseMessage.BLANK_TRANSACTION_TYPE);
+            if(transactionType === "" || transactionType === null || amount === "" || amount === null || segment === "" || segment === null) {
+                if(transactionType === "" || transactionType === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_TRANSACTION_TYPE);
                 }
                 else if(amount === "" || amount === null) {
-                    return self.validation_error_response(responseMessage.BLANK_AMOUNT);
+                    return self.validationErrorResponse(responseMessage.BLANK_AMOUNT);
                 }
                 else if(segment === "" || segment === null) {
-                    return self.validation_error_response(responseMessage.BLANK_SEGMENT);
+                    return self.validationErrorResponse(responseMessage.BLANK_SEGMENT);
                 }
             }
-            else if(transaction_type.toLowerCase() !=="debit" && transaction_type.toLowerCase() !== "credit") {
-                return self.validation_error_response(responseMessage.TRANSACTION_TYPE_ERROR);
+            else if(transactionType.toLowerCase() !=="debit" && transactionType.toLowerCase() !== "credit") {
+                return self.validationErrorResponse(responseMessage.TRANSACTION_TYPE_ERROR);
             }
             else if(parseInt(amount) <= 0) {
-                return self.validation_error_response(responseMessage.ZERO_AMOUNT_ERROR);
+                return self.validationErrorResponse(responseMessage.ZERO_AMOUNT_ERROR);
             }
             let body = {
-                "transaction_type": transaction_type,
+                "transaction_type": transactionType,
                 "amount": amount,
                 "segment": segment
             }
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(apiRequest.POST, apiEndpoint.FUND, body, headers);
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.POST, apiEndpoint.FUND, body, headers);
             return response.data;
         } catch (error) {
-            console.log("set_funds() Error - ", error);
+            self.errorException("setFunds", error);
         }
     };
 
-    self.get_historical_data = async function({interval="", from_date="", to_date="", stock_code="", exchange_code="", product_type="", expiry_date="", right="", strike_price=""}) {
+    self.getHistoricalData = async function({interval="", fromDate="", toDate="", stockCode="", exchangeCode="", productType="", expiryDate="", right="", strikePrice=""}) {
         try {
             if(interval === "" || interval === null) {
-                return self.validation_error_response(responseMessage.BLANK_INTERVAL);
+                return self.validationErrorResponse(responseMessage.BLANK_INTERVAL);
             }
             else if(!Boolean(typeList.INTERVAL_TYPES.includes(interval.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.INTERVAL_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.INTERVAL_TYPE_ERROR);
             }
-            else if(exchange_code === "" || exchange_code === null) {
-                return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            else if(exchangeCode === "" || exchangeCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
             }
-            else if(exchange_code.toLowerCase() !== "nse" && exchange_code.toLowerCase() !== "nfo" && exchange_code.toLowerCase() !== "bse") {
-                return self.validation_error_response(responseMessage.EXCHANGE_CODE_ERROR);
+            else if(exchangeCode.toLowerCase() !== "nse" && exchangeCode.toLowerCase() !== "nfo" && exchangeCode.toLowerCase() !== "bse") {
+                return self.validationErrorResponse(responseMessage.EXCHANGE_CODE_ERROR);
             }
-            else if(from_date === "" || from_date === null) {
-                return self.validation_error_response(responseMessage.BLANK_FROM_DATE);
+            else if(fromDate === "" || fromDate === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_FROM_DATE);
             }
-            else if(to_date === "" || to_date === null) {
-                return self.validation_error_response(responseMessage.BLANK_TO_DATE);
+            else if(toDate === "" || toDate === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_TO_DATE);
             }
-            else if(stock_code === "" || stock_code === null) {
-                return self.validation_error_response(responseMessage.BLANK_STOCK_CODE);
+            else if(stockCode === "" || stockCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_STOCK_CODE);
             }
-            else if(exchange_code.toLowerCase() === "nfo") {
-                if(product_type === "" || product_type === null) {
-                      return self.validation_error_response(responseMessage.BLANK_PRODUCT_TYPE_NFO);
+            else if(exchangeCode.toLowerCase() === "nfo") {
+                if(productType === "" || productType === null) {
+                      return self.validationErrorResponse(responseMessage.BLANK_PRODUCT_TYPE_NFO);
                 }
-                else if(!Boolean(typeList.PRODUCT_TYPES_HIST.includes(product_type.toLowerCase()))) {
-                    return self.validation_error_response(responseMessage.PRODUCT_TYPE_ERROR);
+                else if(!Boolean(typeList.PRODUCT_TYPES_HIST.includes(productType.toLowerCase()))) {
+                    return self.validationErrorResponse(responseMessage.PRODUCT_TYPE_ERROR);
                 }
-                else if(product_type.toLowerCase() === "options" && (strike_price === "" || strike_price === null)) {
-                    return self.validation_error_response(responseMessage.BLANK_STRIKE_PRICE);
+                else if(productType.toLowerCase() === "options" && (strikePrice === "" || strikePrice === null)) {
+                    return self.validationErrorResponse(responseMessage.BLANK_STRIKE_PRICE);
                 }
-                else if(expiry_date === "" || expiry_date === null) {
-                    return self.validation_error_response(responseMessage.BLANK_EXPIRY_DATE);
+                else if(expiryDate === "" || expiryDate === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_EXPIRY_DATE);
                 }
             }
             if(interval === "1minute") {
@@ -938,94 +937,94 @@ var BreezeConnect = function(params) {
 
             let body = {
                 "interval": interval,
-                "from_date": from_date,
-                "to_date": to_date,
-                "stock_code": stock_code,
-                "exchange_code": exchange_code
+                "from_date": fromDate,
+                "to_date": toDate,
+                "stock_code": stockCode,
+                "exchange_code": exchangeCode
             }
 
-            if(product_type !== "" && product_type !== null) {
-                body["product_type"] = product_type;
+            if(productType !== "" && productType !== null) {
+                body["product_type"] = productType;
             }
-            if(expiry_date !== "" && expiry_date !== null) {
-                body["expiry_date"] = expiry_date;
+            if(expiryDate !== "" && expiryDate !== null) {
+                body["expiry_date"] = expiryDate;
             }
-            if(strike_price !== "" && strike_price !== null) {
-                body["strike_price"] = strike_price;
+            if(strikePrice !== "" && strikePrice !== null) {
+                body["strike_price"] = strikePrice;
             }
             if(right != "" && right !== null){
                 body["right"] = right
             }
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(
                 apiRequest.GET, apiEndpoint.HIST_CHART, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("get_historical_data",error);
+            self.errorException("getHistoricalData",error);
         }
     }
 
-    self.get_historical_data_v2 = async function({interval="", from_date="", to_date="", stock_code="", exchange_code="", product_type="", expiry_date="", right="", strike_price=""}) {
+    self.getHistoricalDatav2 = async function({interval="", fromDate="", toDate="", stockCode="", exchangeCode="", productType="", expiryDate="", right="", strikePrice=""}) {
         try {
             if(interval === "" || interval === null) {
-                return self.validation_error_response(responseMessage.BLANK_INTERVAL);
+                return self.validationErrorResponse(responseMessage.BLANK_INTERVAL);
             }
             else if(!Boolean(typeList.INTERVAL_TYPES_HIST_V2.includes(interval.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.INTERVAL_TYPE_ERROR_HIST_V2);
+                return self.validationErrorResponse(responseMessage.INTERVAL_TYPE_ERROR_HIST_V2);
             }
-            else if(exchange_code === "" || exchange_code === null) {
-                return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            else if(exchangeCode === "" || exchangeCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
             }
-            else if(!Boolean(typeList.EXCHANGE_CODES_HIST_V2.includes(exchange_code.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.EXCHANGE_CODE_HIST_V2_ERROR);
+            else if(!Boolean(typeList.EXCHANGE_CODES_HIST_V2.includes(exchangeCode.toLowerCase()))) {
+                return self.validationErrorResponse(responseMessage.EXCHANGE_CODE_HIST_V2_ERROR);
             }
-            else if(from_date === "" || from_date === null) {
-                return self.validation_error_response(responseMessage.BLANK_FROM_DATE);
+            else if(fromDate === "" || fromDate === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_FROM_DATE);
             }
-            else if(to_date === "" || to_date === null) {
-                return self.validation_error_response(responseMessage.BLANK_TO_DATE);
+            else if(toDate === "" || toDate === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_TO_DATE);
             }
-            else if(stock_code === "" || stock_code === null) {
-                return self.validation_error_response(responseMessage.BLANK_STOCK_CODE);
+            else if(stockCode === "" || stockCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_STOCK_CODE);
             }
-            else if(Boolean(typeList.DERI_EXCH_CODES.includes(exchange_code.toLowerCase()))) {
-                if(product_type === "" || product_type === null) {
-                    return self.validation_error_response(responseMessage.BLANK_PRODUCT_TYPE_HIST_V2);
+            else if(Boolean(typeList.DERI_EXCH_CODES.includes(exchangeCode.toLowerCase()))) {
+                if(productType === "" || productType === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_PRODUCT_TYPE_HIST_V2);
                 }
-                else if(!Boolean(typeList.PRODUCT_TYPES_HIST.includes(product_type.toLowerCase()))) {
-                    return self.validation_error_response(responseMessage.PRODUCT_TYPE_ERROR_HIST_V2);
+                else if(!Boolean(typeList.PRODUCT_TYPES_HIST.includes(productType.toLowerCase()))) {
+                    return self.validationErrorResponse(responseMessage.PRODUCT_TYPE_ERROR_HIST_V2);
                 }
-                else if(product_type.toLowerCase() === "options" && (strike_price === "" || strike_price === null)) {
-                    return self.validation_error_response(responseMessage.BLANK_STRIKE_PRICE);
+                else if(productType.toLowerCase() === "options" && (strikePrice === "" || strikePrice === null)) {
+                    return self.validationErrorResponse(responseMessage.BLANK_STRIKE_PRICE);
                 }
-                else if(expiry_date === "" || expiry_date === null) {
-                    return self.validation_error_response(responseMessage.BLANK_EXPIRY_DATE);
+                else if(expiryDate === "" || expiryDate === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_EXPIRY_DATE);
                 }
             }
 
             let url_params = {
                 "interval": interval,
-                "from_date": from_date,
-                "to_date": to_date,
-                "stock_code": stock_code,
-                "exch_code": exchange_code
+                "from_date": fromDate,
+                "to_date": toDate,
+                "stock_code": stockCode,
+                "exch_code": exchangeCode
             }
 
-            if(product_type !== "" && product_type !== null) {
-                url_params["product_type"] = product_type;
+            if(productType !== "" && productType !== null) {
+                url_params["product_type"] = productType;
             }
-            if(expiry_date !== "" && expiry_date !== null) {
-                url_params["expiry_date"] = expiry_date;
+            if(expiryDate !== "" && expiryDate !== null) {
+                url_params["expiry_date"] = expiryDate;
             }
-            if(strike_price !== "" && strike_price !== null) {
-                url_params["strike_price"] = strike_price;
+            if(strikePrice !== "" && strikePrice !== null) {
+                url_params["strike_price"] = strikePrice;
             }
             if(right != "" && right !== null){
                 url_params["right"] = right
             }
             let headers = {
                 "Content-Type": "application/json",
-                'X-SessionToken':self.api_session,
+                'X-SessionToken':self.apiSession,
                 'apikey':self.appKey
             }
             let response = await axios.get(urls.BREEZE_NEW_URL+apiEndpoint.HIST_CHART,{
@@ -1033,135 +1032,135 @@ var BreezeConnect = function(params) {
             })
             return response.data;
         } catch (error) {
-            self.error_exception("get_historical_data",error);
+            self.errorException("getHistoricalData",error);
         }
     }
 
-    self.add_margin = async function({product_type="", stock_code="", exchange_code="", settlement_id="", add_amount="", margin_amount="", open_quantity="", cover_quantity="", category_index_per_stock="", expiry_date="", right="", contract_tag="", strike_price="", segment_code=""}) {
+    self.addMargin = async function({productType="", stockCode="", exchangeCode="", settlementId="", addAmount="", marginAmount="", openQuantity="", coverQuantity="", categoryIndexPerStock="", expiryDate="", right="", contractTag="", strikePrice="", segmentCode=""}) {
         try {
-            if(exchange_code === "" || exchange_code === null) {
-                return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            if(exchangeCode === "" || exchangeCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
             }
-            else if(product_type !== "" && product_type !== null && !Boolean(typeList.PRODUCT_TYPES.includes(product_type.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.PRODUCT_TYPE_ERROR);
+            else if(productType !== "" && productType !== null && !Boolean(typeList.PRODUCT_TYPES.includes(productType.toLowerCase()))) {
+                return self.validationErrorResponse(responseMessage.PRODUCT_TYPE_ERROR);
             }
             else if(right !== "" && right !== null && !Boolean(typeList.RIGHT_TYPES.includes(right.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.RIGHT_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.RIGHT_TYPE_ERROR);
             }
             let body = {
-                "exchange_code": exchange_code
+                "exchange_code": exchangeCode
             }
 
-            if (product_type !== "" && product_type !== null) {
-                body["product_type"] = product_type;
+            if (productType !== "" && productType !== null) {
+                body["product_type"] = productType;
             }
-            if(stock_code !== "" && stock_code !== null) {
-                body["stock_code"] = stock_code;
+            if(stockCode !== "" && stockCode !== null) {
+                body["stock_code"] = stockCode;
             }
-            if(cover_quantity !== "" && cover_quantity !== null) {
-                body["cover_quantity"] = cover_quantity;
+            if(coverQuantity !== "" && coverQuantity !== null) {
+                body["cover_quantity"] = coverQuantity;
             }
-            if(category_index_per_stock != "" && category_index_per_stock !== null){
-                body["category_index_per_stock"] = category_index_per_stock
+            if(categoryIndexPerStock != "" && categoryIndexPerStock !== null){
+                body["category_index_per_stock"] = categoryIndexPerStock;
             }
-            if(contract_tag != "" && contract_tag !== null){
-                body["contract_tag"] = contract_tag
+            if(contractTag != "" && contractTag !== null){
+                body["contract_tag"] = contractTag
             }
-            if(margin_amount !== "" && margin_amount !== null) {
-                body["margin_amount"] = margin_amount;
+            if(marginAmount !== "" && marginAmount !== null) {
+                body["margin_amount"] = marginAmount;
             }
-            if(expiry_date !== "" && expiry_date !== null) {
-                body["expiry_date"] = expiry_date;
+            if(expiryDate !== "" && expiryDate !== null) {
+                body["expiry_date"] = expiryDate;
             }
             if(right != "" && right !== null){
-                body["right"] = right
+                body["right"] = right;
             }
-            if(strike_price != "" && strike_price !== null){
-                body["strike_price"] = strike_price
+            if(strikePrice != "" && strikePrice !== null){
+                body["strike_price"] = strikePrice;
             }
-            if(segment_code != "" && segment_code !== null){
-                body["segment_code"] = segment_code
+            if(segmentCode != "" && segmentCode !== null){
+                body["segment_code"] = segmentCode;
             }
-            if(settlement_id != "" && settlement_id !== null){
-                body["settlement_id"] = settlement_id
+            if(settlementId != "" && settlementId !== null){
+                body["settlement_id"] = settlementId;
             }
-            if(add_amount != "" && add_amount !== null){
-                body["add_amount"] = add_amount
+            if(addAmount != "" && addAmount !== null){
+                body["add_amount"] = addAmount;
             }
-            if(open_quantity != "" && open_quantity !== null){
-                body["open_quantity"] = open_quantity
+            if(openQuantity != "" && openQuantity !== null){
+                body["open_quantity"] = openQuantity;
             }
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(apiRequest.POST, apiEndpoint.MARGIN, body, headers);
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.POST, apiEndpoint.MARGIN, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("add_margin",error);
+            self.errorException("addMargin",error);
         }
     };
 
-    self.get_margin = async function(exchange_code="") {
+    self.getMargin = async function(exchangeCode="") {
         try {
-            if(exchange_code === "" || exchange_code === null) {
-                return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            if(exchangeCode === "" || exchangeCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
             }
             let body = {
-                "exchange_code": exchange_code
+                "exchange_code": exchangeCode
             }
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(apiRequest.GET, apiEndpoint.MARGIN, body, headers);
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.GET, apiEndpoint.MARGIN, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("get_margin",error);
+            self.errorException("getMargin",error);
         }
     };
 
-    self.place_order = async function({stock_code="", exchange_code="", product="", action="", order_type="", stoploss="", quantity="", price="", validity="", validity_date="", disclosed_quantity="", expiry_date="", right="", strike_price="", user_remark=""}) {
+    self.placeOrder = async function({stockCode="", exchangeCode="", product="", action="", orderType="", stoploss="", quantity="", price="", validity="", validityDate="", disclosedQuantity="", expiryDate="", right="", strikePrice="", userRemark=""}) {
         try {
-            if(stock_code === "" || stock_code === null || exchange_code === "" || exchange_code === null || product === "" || product === null || action === "" || action === null || order_type === "" || order_type === null || quantity === "" || quantity === null || price === "" || price === null || action === "" || action == null) {
-                if(stock_code === "" || stock_code === null) {
-                    return self.validation_error_response(responseMessage.BLANK_STOCK_CODE);
+            if(stockCode === "" || stockCode === null || exchangeCode === "" || exchangeCode === null || product === "" || product === null || action === "" || action === null || order_type === "" || order_type === null || quantity === "" || quantity === null || price === "" || price === null || action === "" || action == null) {
+                if(stockCode === "" || stockCode === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_STOCK_CODE);
                 }
-                else if(exchange_code === "" || exchange_code === null) {
-                    return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+                else if(exchangeCode === "" || exchangeCode === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
                 }
                 else if(product === "" || product === null) {
-                    return self.validation_error_response(responseMessage.BLANK_PRODUCT_TYPE);
+                    return self.validationErrorResponse(responseMessage.BLANK_PRODUCT_TYPE);
                 }
                 else if(action === "" || action === null) {
-                    return self.validation_error_response(responseMessage.BLANK_ACTION);
+                    return self.validationErrorResponse(responseMessage.BLANK_ACTION);
                 }
                 else if(order_type === "" || order_type === null) {
-                    return self.validation_error_response(responseMessage.BLANK_ORDER_TYPE);
+                    return self.validationErrorResponse(responseMessage.BLANK_ORDER_TYPE);
                 }
                 else if(quantity === "" || quantity === null) {
-                    return self.validation_error_response(responseMessage.BLANK_QUANTITY);
+                    return self.validationErrorResponse(responseMessage.BLANK_QUANTITY);
                 }
                 else if(validity === "" || validity === null) {
-                    return self.validation_error_response(responseMessage.BLANK_VALIDITY);
+                    return self.validationErrorResponse(responseMessage.BLANK_VALIDITY);
                 }
             }
             else if(!Boolean(typeList.PRODUCT_TYPES.includes(product.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.PRODUCT_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.PRODUCT_TYPE_ERROR);
             }
             else if(action.toLowerCase() !== "buy" && action.toLowerCase() !== "sell") {
-                return self.validation_error_response(responseMessage.ACTION_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.ACTION_TYPE_ERROR);
             }
-            else if(order_type.toLowerCase() !== "limit" && order_type.toLowerCase() !== "market" && order_type.toLowerCase() !== "stoploss") {
-                return self.validation_error_response(responseMessage.ORDER_TYPE_ERROR);
+            else if(orderType.toLowerCase() !== "limit" && orderType.toLowerCase() !== "market" && orderType.toLowerCase() !== "stoploss") {
+                return self.validationErrorResponse(responseMessage.ORDER_TYPE_ERROR);
             }
             else if(validity.toLowerCase() !== "day" && validity.toLowerCase() !== "ioc" && validity.toLowerCase() !== "vtc") {
-                return self.validation_error_response(responseMessage.VALIDITY_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.VALIDITY_TYPE_ERROR);
             }
             else if(right !== "" && right !== null && (right.toLowerCase() !== "put" && right.toLowerCase() !== "call" && right.toLowerCase() !== "others")) {
-                return self.validation_error_response(responseMessage.RIGHT_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.RIGHT_TYPE_ERROR);
             }
 
             let body = {
-                "stock_code": stock_code,
-                "exchange_code": exchange_code,
+                "stock_code": stockCode,
+                "exchange_code": exchangeCode,
                 "product": product,
                 "action": action,
-                "order_type": order_type,
+                "order_type": orderType,
                 "quantity": quantity,
                 "price": price,
                 "validity": validity,
@@ -1170,128 +1169,128 @@ var BreezeConnect = function(params) {
             if(stoploss !== "" && stoploss !== null) {
                 body["stoploss"] = stoploss;
             }
-            if(validity_date !== "" && validity_date !== null) {
-                body["validity_date"] = validity_date;
+            if(validityDate !== "" && validityDate !== null) {
+                body["validity_date"] = validityDate;
             }
-            if(disclosed_quantity !== "" && disclosed_quantity !== null) {
-                body["disclosed_quantity"] = disclosed_quantity;
+            if(disclosedQuantity !== "" && disclosedQuantity !== null) {
+                body["disclosed_quantity"] = disclosedQuantity;
             }
-            if(expiry_date !== "" && expiry_date !== null) {
-                body["expiry_date"] = expiry_date;
+            if(expiryDate !== "" && expiryDate !== null) {
+                body["expiry_date"] = expiryDate;
             }
             if(right !== "" && right !== null) {
                 body["right"] = right;
             }
-            if(strike_price !== "" && strike_price !== null) {
-                body["strike_price"] = strike_price;
+            if(strikePrice !== "" && strikePrice !== null) {
+                body["strike_price"] = strikePrice;
             }
-            if(user_remark !== "" && user_remark !== null) {
-                body["user_remark"] = user_remark;
+            if(userRemark !== "" && userRemark !== null) {
+                body["user_remark"] = userRemark;
             }
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(apiRequest.POST, apiEndpoint.ORDER, body, headers);
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.POST, apiEndpoint.ORDER, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("place_order",error);
+            self.errorException("placeOrder",error);
         }
     };
 
-    self.get_order_detail = async function({exchange_code="", order_id="" }) {
+    self.getOrderDetail = async function({exchangeCode="", orderId="" }) {
         try {
-            if(exchange_code === "" && exchange_code === null && order_id === "" && order_id === null) {
-                if(exchange_code === "" && exchange_code === null) {
-                    return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            if(exchangeCode === "" && exchangeCode === null && orderId === "" && orderId === null) {
+                if(exchangeCode === "" && exchangeCode === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
                 }
-                else if(order_id === "" && order_id === null) {
-                    return self.validation_error_response(responseMessage.BLANK_ORDER_ID);
+                else if(orderId === "" && orderId === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_ORDER_ID);
                 }
             }
             let body = {
-                "exchange_code": exchange_code,
-                "order_id": order_id
+                "exchange_code": exchangeCode,
+                "order_id": orderId
             }
 
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(apiRequest.GET, apiEndpoint.ORDER, body, headers);
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.GET, apiEndpoint.ORDER, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("get_order_detail",error);
+            self.errorException("getOrderDetail",error);
         }
     };
 
-    self.get_order_list = async function({exchange_code = "", from_date = "", to_date = ""}) {
+    self.getOrderList = async function({exchangeCode = "", fromDate = "", toDate = ""}) {
         try {
-            if(exchange_code === "" || exchange_code === null || from_date === "" || from_date === null || to_date === "" || to_date === null) {
-                if(exchange_code === "" || exchange_code === null) {
-                    return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            if(exchangeCode === "" || exchangeCode === null || fromDate === "" || fromDate === null || toDate === "" || toDate === null) {
+                if(exchangeCode === "" || exchangeCode === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
                 }
-                else if(from_date === "" || from_date === null) {
-                    return self.validation_error_response(responseMessage.BLANK_FROM_DATE);
+                else if(fromDate === "" || fromDate === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_FROM_DATE);
                 }
-                else if(to_date === "" || to_date === null) {
-                    return self.validation_error_response(responseMessage.BLANK_TO_DATE);
+                else if(toDate === "" || toDate === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_TO_DATE);
                 }
             }
             let body = {
-                "exchange_code": exchange_code,
-                "from_date": from_date,
-                "to_date": to_date
+                "exchange_code": exchangeCode,
+                "from_date": fromDate,
+                "to_date": toDate
             };
 
-            let headers = self.generate_headers(body)
-            let response = await self.make_request(apiRequest.GET, apiEndpoint.ORDER, body, headers);
+            let headers = self.generateHeaders(body)
+            let response = await self.makeRequest(apiRequest.GET, apiEndpoint.ORDER, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("get_order_list",error);
+            self.errorException("getOrderList",error);
         }
     };
 
-    self.cancel_order = async function({exchange_code = "", order_id = ""}) {
+    self.cancelOrder = async function({exchangeCode = "", orderId = ""}) {
         try {
-            if(exchange_code === "" || exchange_code === null && order_id === "" || order_id === null) {
-                if(exchange_code === "" || exchange_code === null) {
-                    return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            if(exchangeCode === "" || exchangeCode === null && orderId === "" || orderId === null) {
+                if(exchangeCode === "" || exchangeCode === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
                 }
-                else if(order_id === "" || order_id === null) {
-                    return self.validation_error_response(responseMessage.BLANK_ORDER_ID);
+                else if(orderId === "" || orderId === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_ORDER_ID);
                 }
             }
             let body = {
-                "exchange_code": exchange_code,
-                "order_id": order_id
+                "exchange_code": exchangeCode,
+                "order_id": orderId
             };
 
-            let headers = self.generate_headers(body)
-            let response = await self.make_request(apiRequest.DELETE, apiEndpoint.ORDER, body, headers)
+            let headers = self.generateHeaders(body)
+            let response = await self.makeRequest(apiRequest.DELETE, apiEndpoint.ORDER, body, headers)
             return response.data;
         } catch (error) {
-            self.error_exception("cancel_order",error);
+            self.errorException("cancelOrder",error);
         }
     };
 
-    self.modify_order = async function({order_id = "", exchange_code = "", order_type = "", stoploss = "", quantity = "", price = "", validity = "", disclosed_quantity = "", validity_date = ""}) {
+    self.modifyOrder = async function({orderId = "", exchangeCode = "", orderType = "", stoploss = "", quantity = "", price = "", validity = "", disclosedQuantity = "", validityDate = ""}) {
         try {
-            if(exchange_code === "" || exchange_code === null || order_id === "" || order_id === null) {
-                if(exchange_code === "" || exchange_code === null) {
-                    return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            if(exchangeCode === "" || exchangeCode === null || orderId === "" || orderId === null) {
+                if(exchangeCode === "" || exchangeCode === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
                 }
                 else if(order_id === "" || order_id === null) {
-                    return self.validation_error_response(responseMessage.BLANK_ORDER_ID);
+                    return self.validationErrorResponse(responseMessage.BLANK_ORDER_ID);
                 }
             }
             else if(order_type !== "" && order_type !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.BLANK_ORDER_TYPE);
+                return self.validationErrorResponse(responseMessage.BLANK_ORDER_TYPE);
             }
             else if(validity !== "" && validity !== null && !Boolean(typeList.VALIDITY_TYPES.includes(validity.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.ORDER_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.ORDER_TYPE_ERROR);
             }
             let body = {
                 "order_id": order_id,
-                "exchange_code": exchange_code,
+                "exchange_code": exchangeCode,
             }
 
-            if(order_type !== "" && order_type !== null) {
-                body["order_type"] = order_type;
+            if(orderType !== "" && orderType !== null) {
+                body["order_type"] = orderType;
             }
             if(stoploss !== "" && stoploss !== null) {
                 body["stoploss"] = stoploss;
@@ -1305,138 +1304,138 @@ var BreezeConnect = function(params) {
             if(validity !== "" && validity !== null) {
                 body["validity"] = validity;
             }
-            if(disclosed_quantity !== "" && disclosed_quantity !== null) {
-                body["disclosed_quantity"] = disclosed_quantity;
+            if(disclosedQuantity !== "" && disclosedQuantity !== null) {
+                body["disclosed_quantity"] = disclosedQuantity;
             }
-            if(validity_date !== "" && validity_date !== null) {
-                body["validity_date"] = validity_date;
+            if(validityDate !== "" && validityDate !== null) {
+                body["validity_date"] = validityDate;
             }
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(apiRequest.PUT, apiEndpoint.ORDER, body, headers);
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.PUT, apiEndpoint.ORDER, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("modify_order",error);
+            self.errorException("modifyOrder",error);
         }
     };
 
-    self.get_portfolio_holdings = async function({exchange_code = "", from_date = "", to_date = "",stock_code = "", portfolio_type = ""}) {
+    self.getPortfolioHoldings = async function({exchangeCode = "", fromDate = "", toDate = "",stockCode = "", portfolioType = ""}) {
         try {
-            if(exchange_code === "" || exchange_code === null) {
-                return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            if(exchangeCode === "" || exchangeCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
             }
             let body = {
-                "exchange_code": exchange_code,
+                "exchange_code": exchangeCode,
             };
-            if(from_date !== "" && from_date !== null){
-                body["from_date"] = from_date
+            if(fromDate !== "" && fromDate !== null){
+                body["from_date"] = fromDate
             }
-            if(to_date !== "" && to_date !== null){
-                body["to_date"] = to_date
+            if(toDate !== "" && toDate !== null){
+                body["to_date"] = toDate
             }
-            if(stock_code != "" && stock_code !== null){
-                body["stock_code"] = stock_code
+            if(stockCode != "" && stockCode !== null){
+                body["stock_code"] = stockCode
             }
-            if(portfolio_type !== "" && portfolio_type !== null){
-                body["portfolio_type"] = portfolio_type
+            if(portfolioType !== "" && portfolioType !== null){
+                body["portfolio_type"] = portfolioType
             }
-            let headers = self.generate_headers(body)
-            let response = await self.make_request(
+            let headers = self.generateHeaders(body)
+            let response = await self.makeRequest(
                 apiRequest.GET,apiEndpoint.PORTFOLIO_HOLDING, body, headers)
             return response.data;
         } catch (error) {
-            self.error_exception("get_portfolio_holdings",error);
+            self.errorException("getPortfolioHoldings",error);
         }
     };
 
-    self.get_portfolio_positions = async function() {
+    self.getPortfolioPositions = async function() {
         try {
             let body = {};
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(
                 apiRequest.GET, apiEndpoint.PORTFOLIO_POSITION, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("get_portfolio_positions",error);
+            self.errorException("getPortfolioPositions",error);
         }
     };
 
-    self.get_quotes = async function({stock_code = "", exchange_code = "", expiry_date = "", product_type = "", right = "", strike_price = ""}) {
+    self.getQuotes = async function({stockCode = "", exchangeCode = "", expiryDate = "", productType = "", right = "", strikePrice = ""}) {
         try {
-            if(exchange_code === "" || exchange_code === null || stock_code === "" || stock_code === null) {
-                if(exchange_code === "" || exchange_code === null) {
-                    return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            if(exchangeCode === "" || exchangeCode === null || stockCode === "" || stockCode === null) {
+                if(exchangeCode === "" || exchangeCode === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
                 }
-                if(stock_code === "" || stock_code === null) {
-                    return self.validation_error_response(responseMessage.BLANK_STOCK_CODE);
+                if(stockCode === "" || stockCode === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_STOCK_CODE);
                 }
             }
-            else if(product_type !== "" && product_type !== null && !Boolean(typeList.PRODUCT_TYPES.includes(product_type.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.PRODUCT_TYPE_ERROR);
+            else if(productType !== "" && productType !== null && !Boolean(typeList.PRODUCT_TYPES.includes(productType.toLowerCase()))) {
+                return self.validationErrorResponse(responseMessage.PRODUCT_TYPE_ERROR);
             }
             else if(right !== "" && right !== null && !Boolean(typeList.RIGHT_TYPES.includes(right.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.RIGHT_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.RIGHT_TYPE_ERROR);
             }
             let body = {
-                "stock_code": stock_code,
-                "exchange_code": exchange_code
+                "stock_code": stockCode,
+                "exchange_code": exchangeCode
             };
 
-            if(expiry_date !== "" && expiry_date !== null) {
-                body["expiry_date"] = expiry_date
+            if(expiryDate !== "" && expiryDate !== null) {
+                body["expiry_date"] = expiryDate
             }
-            if(product_type !== "" && product_type !== null) {
-                body["product_type"] = product_type
+            if(productType !== "" && productType !== null) {
+                body["product_type"] = productType
             }
             if(right !== "" && right !== null) {
                 body["right"] = right
             }
-            if(strike_price !== "" && strike_price !== null) {
-                body["strike_price"] = strike_price
+            if(strikePrice !== "" && strikePrice !== null) {
+                body["strike_price"] = strikePrice
             }
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(apiRequest.GET,apiEndpoint.QUOTE, body, headers);
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.GET,apiEndpoint.QUOTE, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("get_quotes",error);
+            self.errorException("getQuotes",error);
         }
     };
 
-    self.get_option_chain_quotes = async function({stockCode="", exchangeCode="", expiryDate="", productType="", right="", strikePrice=""}) {
+    self.getOptionChainQuotes = async function({stockCode="", exchangeCode="", expiryDate="", productType="", right="", strikePrice=""}) {
         try {
             if(exchangeCode === "" || exchangeCode === null || exchangeCode!=="nfo") {
-                return self.validation_error_response(responseMessage.OPT_CHAIN_EXCH_CODE_ERROR);
+                return self.validationErrorResponse(responseMessage.OPT_CHAIN_EXCH_CODE_ERROR);
             }
             else if(productType === "" || productType === null) {
-                return self.validation_error_response(responseMessage.BLANK_PRODUCT_TYPE_NFO);
+                return self.validationErrorResponse(responseMessage.BLANK_PRODUCT_TYPE_NFO);
             }
             else if(productType.toLowerCase()!=="futures" && productType.toLowerCase()!=="options") {
-                return self.validation_error_response(responseMessage.PRODUCT_TYPE_ERROR_NFO);
+                return self.validationErrorResponse(responseMessage.PRODUCT_TYPE_ERROR_NFO);
             }
             else if(stockCode===null || stockCode==="")
             {
-                return self.validation_error_response(responseMessage.BLANK_STOCK_CODE);
+                return self.validationErrorResponse(responseMessage.BLANK_STOCK_CODE);
             }
             else if(productType.toLowerCase()==="options")
             {
                 if((expiryDate===null || expiryDate==="") && (strikePrice===null || strikePrice==="") && (right===null || right===""))
                 {
-                    return self.validation_error_response(responseMessage.NFO_FIELDS_MISSING_ERROR);
+                    return self.validationErrorResponse(responseMessage.NFO_FIELDS_MISSING_ERROR);
                 }
                 else if((expiryDate!==null || expiryDate!=="") && (strikePrice===null || strikePrice==="") && (right===null || right===""))
                 {
-                    return self.validation_error_response(responseMessage.BLANK_RIGHT_STRIKE_PRICE);
+                    return self.validationErrorResponse(responseMessage.BLANK_RIGHT_STRIKE_PRICE);
                 }
                 else if((expiryDate===null || expiryDate==="") && (strikePrice!==null || strikePrice!=="") && (right===null || right===""))
                 {
-                    return self.validation_error_response(responseMessage.BLANK_RIGHT_EXPIRY_DATE);
+                    return self.validationErrorResponse(responseMessage.BLANK_RIGHT_EXPIRY_DATE);
                 }
                 else if((expiryDate===null || expiryDate==="") && (strikePrice===null || strikePrice==="") && (right!==null || right!==""))
                 {
-                    return self.validation_error_response(responseMessage.BLANK_EXPIRY_DATE_STRIKE_PRICE);
+                    return self.validationErrorResponse(responseMessage.BLANK_EXPIRY_DATE_STRIKE_PRICE);
                 }
                 else if((right!==null || right!=="") && (right.toLowerCase()!=="call" && right.toLowerCase()!=="put" && right.toLowerCase()!=="options"))
                 {
-                    return self.validation_error_response(responseMessage.RIGHT_TYPE_ERROR);
+                    return self.validationErrorResponse(responseMessage.RIGHT_TYPE_ERROR);
                 }
             }
             let body = {
@@ -1455,138 +1454,138 @@ var BreezeConnect = function(params) {
             if(strikePrice !== "" && strikePrice !== null) {
                 body["strike_price"] = strikePrice
             }
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(apiRequest.GET,apiEndpoint.OPT_CHAIN, body, headers);
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.GET,apiEndpoint.OPT_CHAIN, body, headers);
             return response.data;
          
         } catch (error) {
-            self.error_exception("get_option_chain_quote",error);
+            self.errorException("getOptionChainQuotes",error);
         }
     };
 
-    self.square_off = async function(
-        {source_flag = "", stock_code = "", exchange_code  = "", quantity  = "", price  = "", action  = "", order_type  = "", validity  = "", stoploss  = "", 
-            disclosed_quantity  = "", protection_percentage  = "", settlement_id  = "", margin_amount  = "", open_quantity  = "", cover_quantity  = "", 
-            product_type  = "", expiry_date  = "", right  = "", strike_price  = "", validity_date  = "", trade_password  = "", alias_name  = ""}) 
+    self.squareOff = async function(
+        {sourceFlag = "", stockCode = "", exchangeCode  = "", quantity  = "", price  = "", action  = "", orderType  = "", validity  = "", stoploss  = "", 
+            disclosedQuantity  = "", protectionPercentage  = "", settlementId  = "", marginAmount  = "", openQuantity  = "", coverQuantity  = "", 
+            productType  = "", expiryDate  = "", right  = "", strikePrice  = "", validityDate  = "", tradePassword  = "", aliasName  = ""}) 
         {
         try {
-            if(exchange_code === "" || exchange_code === null || stock_code === "" || stock_code === null) {
-                if(exchange_code === "" || exchange_code === null) {
-                    return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            if(exchangeCode === "" || exchangeCode === null || stockCode === "" || stockCode === null) {
+                if(exchangeCode === "" || exchangeCode === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
                 }
-                if(stock_code === "" || stock_code === null) {
-                    return self.validation_error_response(responseMessage.BLANK_STOCK_CODE);
+                if(stockCode === "" || stockCode === null) {
+                    return self.validationErrorResponse(responseMessage.BLANK_STOCK_CODE);
                 }
             }   
-            else if(product_type !== "" && product_type !== null && !Boolean(typeList.PRODUCT_TYPES.includes(product_type.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.PRODUCT_TYPE_ERROR);
+            else if(productType !== "" && productType !== null && !Boolean(typeList.PRODUCT_TYPES.includes(productType.toLowerCase()))) {
+                return self.validationErrorResponse(responseMessage.PRODUCT_TYPE_ERROR);
             }
             else if(right !== "" && right !== null && !Boolean(typeList.RIGHT_TYPES.includes(right.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.RIGHT_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.RIGHT_TYPE_ERROR);
             }
             else if(action !== "" && action !== null && !Boolean(typeList.ACTION_TYPES.includes(action.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.ACTION_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.ACTION_TYPE_ERROR);
             }
             else if(validity !== "" && validity !== null && !Boolean(typeList.VALIDITY_TYPES.includes(validity.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.VALIDITY_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.VALIDITY_TYPE_ERROR);
             }
             else if(order_type !== "" && order_type !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.ORDER_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.ORDER_TYPE_ERROR);
             }
 
 
             let body = {
-                "source_flag": source_flag,
-                "stock_code": stock_code,
-                "exchange_code": exchange_code,
+                "source_flag": sourceFlag,
+                "stock_code": stockCode,
+                "exchange_code": exchangeCode,
                 "quantity": quantity,
                 "price": price,
                 "action": action,
-                "order_type": order_type,
+                "order_type": orderType,
                 "validity": validity,
                 "stoploss_price": stoploss,
-                "disclosed_quantity": disclosed_quantity,
-                "protection_percentage": protection_percentage,
-                "settlement_id": settlement_id,
-                "margin_amount": margin_amount,
-                "open_quantity": open_quantity,
-                "cover_quantity": cover_quantity,
-                "product_type": product_type,
-                "expiry_date": expiry_date,
+                "disclosed_quantity": disclosedQuantity,
+                "protection_percentage": protectionPercentage,
+                "settlement_id": settlementId,
+                "margin_amount": marginAmount,
+                "open_quantity": openQuantity,
+                "cover_quantity": coverQuantity,
+                "product_type": productType,
+                "expiry_date": expiryDate,
                 "right": right,
-                "strike_price": strike_price,
-                "validity_date": validity_date,
-                "alias_name": alias_name,
-                "trade_password": trade_password
+                "strike_price": strikePrice,
+                "validity_date": validityDate,
+                "alias_name": aliasName,
+                "trade_password": tradePassword
             };
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(apiRequest.POST, apiEndpoint.SQUARE_OFF, body, headers);
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.POST, apiEndpoint.SQUARE_OFF, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("square_off",error);
+            self.errorException("squareOff",error);
         }
     };
 
-    self.get_trade_list = async function({from_date = "", to_date = "", exchange_code = "", product_type = "", action = "", stock_code = ""}) {
+    self.getTradeList = async function({fromDate = "", toDate = "", exchangeCode = "", productType = "", action = "", stockCode = ""}) {
         try {
-            if(exchange_code === "" || exchange_code === null) {
-                return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            if(exchangeCode === "" || exchangeCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
             }
-            else if(product_type !== "" && product_type !== null && !Boolean(typeList.PRODUCT_TYPES.includes(product_type.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.PRODUCT_TYPE_ERROR);
+            else if(productType !== "" && productType !== null && !Boolean(typeList.PRODUCT_TYPES.includes(productType.toLowerCase()))) {
+                return self.validationErrorResponse(responseMessage.PRODUCT_TYPE_ERROR);
             }
             else if(action !== "" && action !== null && !Boolean(typeList.ACTION_TYPES.includes(action.toLowerCase()))) {
-                return self.validation_error_response(responseMessage.ACTION_TYPE_ERROR);
+                return self.validationErrorResponse(responseMessage.ACTION_TYPE_ERROR);
             }
             let body = {
-                "exchange_code": exchange_code,
+                "exchange_code": exchangeCode,
             };
 
-            if(from_date !== "" && from_date !== null) {
-                body["from_date"] = from_date;
+            if(fromDate !== "" && fromDate !== null) {
+                body["from_date"] = fromDate;
             }
-            if(to_date !== "" && to_date !== null) {
-                body["to_date"] = to_date;
+            if(toDate !== "" && toDate !== null) {
+                body["to_date"] = toDate;
             }
-            if(product_type !== "" && product_type !== null) {
-                body["product_type"] = product_type;
+            if(productType !== "" && productType !== null) {
+                body["product_type"] = productType;
             }
             if(action !== "" && action !== null) {
                 body["action"] = action;
             }
-            if(stock_code !== "" && stock_code !== null) {
-                body["stock_code"] = stock_code;
+            if(stockCode !== "" && stockCode !== null) {
+                body["stock_code"] = stockCode;
             }
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(apiRequest.GET, apiEndpoint.TRADE, body, headers);
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.GET, apiEndpoint.TRADE, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("get_trade_list",error);
+            self.errorException("getTradeList",error);
         }
     };
 
-    self.get_trade_detail = async function({exchange_code = "", order_id = ""}) {
+    self.getTradeDetail = async function({exchangeCode = "", orderId = ""}) {
         try {
-            if(exchange_code === "" || exchange_code === null) {
-                return self.validation_error_response(responseMessage.BLANK_EXCHANGE_CODE);
+            if(exchangeCode === "" || exchangeCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
             }
-            else if(order_id === "" || order_id === null) {
-                return self.validation_error_response(responseMessage.BLANK_ORDER_ID);
+            else if(orderId === "" || orderId === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_ORDER_ID);
             }
 
             let body = {
-                "exchange_code": exchange_code,
-                "order_id": order_id
+                "exchange_code": exchangeCode,
+                "order_id": orderId
             };
-            let headers = self.generate_headers(body);
-            let response = await self.make_request(apiRequest.GET, apiEndpoint.TRADE, body, headers);
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.GET, apiEndpoint.TRADE, body, headers);
             return response.data;
         } catch (error) {
-            self.error_exception("get_trade_detail",error);
+            self.errorException("getTradeDetail",error);
         }
     };
 
-    self.get_names = async function({exchange = "", stockCode = ""})
+    self.getMames = async function({exchange = "", stockCode = ""})
     {
         exchange = exchange.toLowerCase();
         stockCode = stockCode.toUpperCase();
@@ -1630,7 +1629,7 @@ var BreezeConnect = function(params) {
                 'company_name':elem[3],
                 'isec_token_level1': "4.1!"+ elem[0],
                 'isec_token_level2':"4.2!" + elem[0],
-                'exchange_stock_code': elem[60],
+                'exchange_stockCode': elem[60],
                 'exchange':exchange
             }
         } 
@@ -1644,14 +1643,14 @@ var BreezeConnect = function(params) {
                 'company_name':elem[3],
                 'isec_token_level1': "4.1!"+ elem[0],
                 'isec_token_level2':"4.2!" + elem[0],
-                'exchange_stock_code': elem[60],
+                'exchange_stockCode': elem[60],
                 'exchange':exchange
             } 
         } 
         
 
       }
-    return(new Map([["Status","404"],["Response","get_names(): Result Not Found"]]));
+    return(new Map([["Status","404"],["Response","getNames(): Result Not Found"]]));
     
     };
 
