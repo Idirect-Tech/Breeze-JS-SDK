@@ -77,7 +77,7 @@ function apiCalls(){
 //Connect to websocket(it will connect to rate refresh server)
 breeze.wsConnect();
 
-//# Callback to receive ticks.
+//Callback to receive ticks.
 function onTicks(ticks){
     console.log(ticks);
 }
@@ -123,7 +123,7 @@ breeze.unsubscribeFeeds(
 ).then(function(resp){console.log(resp)});
 
 
-//Unsubscribe feeds using stock token
+//unsubscribe feeds using stock token
 breeze.unsubscribeFeeds({stockToken:"4.1!1594"}).then(
         function(resp){
             console.log(resp);
@@ -221,15 +221,15 @@ Token number can be obtained via get_names() function or downloading master secu
 https://api.icicidirect.com/breezeapi/documents/index.html#instruments
 
 
-exchange_code must be 'BSE', 'NSE', 'NDX', 'MCX' or 'NFO'.
+exchangeCode must be 'BSE', 'NSE', 'NDX', 'MCX' or 'NFO'.
 
 stock_code should not be an empty string. Examples for stock_code are "WIPRO" or "ZEEENT".
 
 product_type can be either 'Futures', 'Options' or an empty string. 
-Product_type can not be an empty string for exchange_code 'NDX', 'MCX' and 'NFO'. 
+Product_type can not be an empty string for exchangeCode 'NDX', 'MCX' and 'NFO'. 
 
 strike_date can be in DD-MMM-YYYY(Ex.: 01-Jan-2022) or an empty string. 
-strike_date can not be an empty string for exchange_code 'NDX', 'MCX' and 'NFO'.
+strike_date can not be an empty string for exchangeCode 'NDX', 'MCX' and 'NFO'.
 
 strike_price can be float-value in string or an empty string. 
 strike_price can not be an empty string for product_type 'Options'.
@@ -279,11 +279,11 @@ For Streaming OHLCV, interval must not be empty and must be equal to either of t
 <h4 id="customer_detail" > Get Customer details by api-session value.</h4>
 
 ```javascript
-    breeze.getCustomerDetails("api session").then((data) => {
-        console.log(data);
-    }).catch((err)=>{
-        console.log(err);
-    });
+breeze.getCustomerDetails("api session").then((data) => {
+    console.log(data);
+}).catch((err)=>{
+    console.log(err);
+});
 
 ```
 
@@ -519,7 +519,7 @@ breeze.getMargin(exchangeCode='NSE').then(function(resp){
 })
 ```
 
-<p> Note: Please change exchange_code=“NFO” to get F&O margin details </p>
+<p> Note: Please change exchangeCode=“NFO” to get F&O margin details </p>
 <br>
 <a href="#index">Back to Index</a>
 <hr>
@@ -688,7 +688,7 @@ breeze.getOrderDetail(
 })
 ```                        
 
-<p> Note: Please change exchange_code=“NFO” to get details about F&O</p>
+<p> Note: Please change exchangeCode=“NFO” to get details about F&O</p>
 <br>
 <a href="#index">Back to Index</a>
 <hr>
@@ -709,7 +709,7 @@ breeze.getOrderList(
 })
 ```
 
-<p> Note: Please change exchange_code=“NFO” to get details about F&O</p>
+<p> Note: Please change exchangeCode=“NFO” to get details about F&O</p>
 <br>
 <a href="#index">Back to Index</a>
 <hr>
@@ -778,7 +778,7 @@ breeze.getPortfolioHoldings(
 })
 ```
 
-<p> Note: Please change exchange_code=“NSE” to get Equity Portfolio Holdings</p>
+<p> Note: Please change exchangeCode=“NSE” to get Equity Portfolio Holdings</p>
 <br>
 <a href="#index">Back to Index</a>
 <hr>
@@ -1008,7 +1008,7 @@ breeze.getNames({exchangeCode :'NSE',stockCode : 'TATASTEEL'})
     console.log(resp);
 })
 
-breeze.getNames({exchange_code : 'NSE',stock_code : 'RELIANCE'})
+breeze.getNames({exchangeCode : 'NSE',stock_code : 'RELIANCE'})
 .then(function(resp){
     console.log(resp);
 })
