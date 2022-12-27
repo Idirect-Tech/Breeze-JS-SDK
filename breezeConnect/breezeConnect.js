@@ -1114,7 +1114,7 @@ var BreezeConnect = function(params) {
         }
     };
 
-    self.placeOrder = async function({stockCode="", exchangeCode="", product="", action="", orderType="", stoploss="", quantity="", price="", validity="", validityDate="", disclosedQuantity="", expiryDate="", right="", strikePrice="", userRemark=""}) {
+    self.placeOrder = async function({stockCode="", exchangeCode="", product="", action="", orderType="", stoploss="", quantity="", price="", validity="", validityDate="", disclosedQuantity="", expiryDate="", right="", strikePrice="", userRemark="", orderTypeFresh = "", orderRateFresh = ""}) {
         try {
             if(stockCode === "" || stockCode === null || exchangeCode === "" || exchangeCode === null || product === "" || product === null || action === "" || action === null || order_type === "" || order_type === null || quantity === "" || quantity === null || price === "" || price === null || action === "" || action == null) {
                 if(stockCode === "" || stockCode === null) {
@@ -1186,6 +1186,14 @@ var BreezeConnect = function(params) {
             }
             if(userRemark !== "" && userRemark !== null) {
                 body["user_remark"] = userRemark;
+            }
+            if(orderRateFresh !=="" && orderRateFresh !== null)
+            {
+                body["order_rate_fresh"] = orderRateFresh;
+            }
+            if(orderTypeFresh !== "" && orderTypeFresh !== null)
+            {
+                body["order_type_fresh"] = orderTypeFresh;
             }
             let headers = self.generateHeaders(body);
             let response = await self.makeRequest(apiRequest.POST, apiEndpoint.ORDER, body, headers);
