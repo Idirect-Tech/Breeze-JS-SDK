@@ -83,7 +83,7 @@ function onTicks(ticks){
 }
 
 //Assign the callbacks
-breeze.on_ticks = on_ticks;
+breeze.onTicks = onTicks;
 
 
 //subscribe stocks feeds by stock-token
