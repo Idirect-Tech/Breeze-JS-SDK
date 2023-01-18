@@ -42,7 +42,7 @@ const apiEndpoint = {
     PORTFOLIO_POSITION:"portfoliopositions",
     QUOTE:"quotes",
     TRADE:"trades",
-    OPT_CHAIN:"OptionChain",
+    OPT_CHAIN:"optionchain",
     SQUARE_OFF:"squareoff"    
 }
 
