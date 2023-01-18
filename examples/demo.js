@@ -1,3 +1,6 @@
+//make sure you have latest package of breezeconnect installed. 
+// shell command -> npm i breezeconnect
+
 //import library
 var BreezeConnect = require('breezeconnect').BreezeConnect;
 
