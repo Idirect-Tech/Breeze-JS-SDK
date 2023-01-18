@@ -1410,7 +1410,7 @@ var BreezeConnect = function(params) {
 
     self.getOptionChainQuotes = async function({stockCode="", exchangeCode="", expiryDate="", productType="", right="", strikePrice=""}) {
         try {
-            if(exchangeCode === "" || exchangeCode === null || exchangeCode!=="nfo") {
+            if(exchangeCode === "" || exchangeCode === null || exchangeCode.toLowerCase()!=="nfo") {
                 return self.validationErrorResponse(responseMessage.OPT_CHAIN_EXCH_CODE_ERROR);
             }
             else if(productType === "" || productType === null) {
