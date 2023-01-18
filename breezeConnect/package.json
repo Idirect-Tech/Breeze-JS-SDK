@@ -1,7 +1,7 @@
 {
   "name": "breezeconnect",
-  "version": "1.0.14",
-  "main": "breeze_connect.js",
+  "version": "1.0.18",
+  "main": "breezeConnect.js",
   "description": "The official JS client for communicating with BreezeConnect API and Websocket.",
   "dependencies": {
     "axios": "^0.27.2",
