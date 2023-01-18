@@ -14,7 +14,7 @@
 
 breezeapi@icicisecurities.com
 
-The official Python client library for the ICICI Securities trading APIs. BreezeConnect is a set of REST-like APIs that allows one to build a complete investment and trading platform. Following are some notable features of Breeze APIs:
+The official Javascript client library for the ICICI Securities trading APIs. BreezeConnect is a set of REST-like APIs that allows one to build a complete investment and trading platform. Following are some notable features of Breeze APIs:
 
 1. Execute orders in real time
 2. Manage Portfolio
