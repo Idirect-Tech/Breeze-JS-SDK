@@ -1129,7 +1129,7 @@ var BreezeConnect = function(params) {
                 else if(action === "" || action === null) {
                     return self.validationErrorResponse(responseMessage.BLANK_ACTION);
                 }
-                else if(order_type === "" || order_type === null) {
+                else if(orderType === "" || orderType === null) {
                     return self.validationErrorResponse(responseMessage.BLANK_ORDER_TYPE);
                 }
                 else if(quantity === "" || quantity === null) {
@@ -1593,7 +1593,57 @@ var BreezeConnect = function(params) {
         }
     };
 
-    self.getMames = async function({exchange = "", stockCode = ""})
+    
+    self.previewOrder = async function({ stockCode="",exchangeCode="",productType="",orderType="",price="",action="",quantity="",expiryDate="",right="",strikePrice="",specialFlag="",stoploss="",orderRateFresh=""})
+    {
+        try
+        {
+            if(exchangeCode === "" || exchangeCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
+            }
+            if(stockCode === "" || stockCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_STOCK_CODE);
+            }
+            if(productType === "" || productType === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_PRODUCT_TYPE_NFO);
+            }
+            if(right !== "" && right !== null && !Boolean(typeList.RIGHT_TYPES.includes(right.toLowerCase()))) {
+                return self.validationErrorResponse(responseMessage.RIGHT_TYPE_ERROR);
+            }
+            if(action === "" || action === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_ACTION);
+            }
+            if(orderType === "" || orderType === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_ORDER_TYPE);
+            }
+
+            body = {
+                "stock_code": stockCode,
+                "exchange_code": exchangeCode,
+                "product": productType,
+                "order_type": orderType,
+                "price": price,
+                "action": action,
+                "quantity": quantity,
+                "expiry_date": expiryDate,
+                "right": right,
+                "strike_price": strikePrice,
+                "specialflag" : specialFlag,
+                "stoploss": stoploss,
+                "order_rate_fresh": orderRateFresh
+                
+            }
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.GET, apiEndpoint.PREVIEW_ORDER, body, headers);
+            return response.data;
+        }
+        catch(error)
+        {
+            self.errorException("previewOrder",error);
+        }
+    }
+
+    self.getNames = async function({exchange = "", stockCode = ""})
     {
         exchange = exchange.toLowerCase();
         stockCode = stockCode.toUpperCase();

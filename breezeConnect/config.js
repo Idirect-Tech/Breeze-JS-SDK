@@ -43,7 +43,8 @@ const apiEndpoint = {
     QUOTE:"quotes",
     TRADE:"trades",
     OPT_CHAIN:"optionchain",
-    SQUARE_OFF:"squareoff"    
+    SQUARE_OFF:"squareoff",
+    PREVIEW_ORDER:"preview_order"    
 }
 
 //Exception Messages

@@ -272,6 +272,7 @@ For Streaming OHLCV, interval must not be empty and must be equal to either of t
  <li><a href="#trade_list">get_trade_list</a></li>
  <li><a href="#trade_detail">get_trade_detail</a></li>
  <li><a href="#get_names"> get_names </a></li>
+ <li><a href="#preview_order"> preview_order </a></li>
 </ul>
 </div>
 
@@ -1008,11 +1009,33 @@ breeze.getNames({exchangeCode :'NSE',stockCode : 'TATASTEEL'})
     console.log(resp);
 })
 
-breeze.getNames({exchangeCode : 'NSE',stock_code : 'RELIANCE'})
+breeze.getNames({exchangeCode : 'NSE',stockCode : 'RELIANCE'})
 .then(function(resp){
     console.log(resp);
 })
 ```
 <p>Note: Use this method to find ICICI specific stock codes / token </p>
+
+<a href="#index">Back to Index</a>
+<hr>
+
+<h4 id = "preview_order">Preview Order </h4>
+
+```javascript
+
+    breeze.previewOrder(
+    stockCode = "ICIBAN",
+    exchangeCode = "NSE",
+    productType = "margin",
+    orderType = "limit",
+    price = "907.05",
+    action = "buy",
+    quantity = "1",
+    specialFlag = "N").then(function(resp){
+    console.log(resp);
+    }).catch((err)=>{
+        console.log(err);
+    })
+    ```
 
 <a href="#index">Back to Index</a>
