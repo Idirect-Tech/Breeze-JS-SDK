@@ -852,7 +852,7 @@ var BreezeConnect = function(params) {
         try {
             let body = {}
             headers = self.generateHeaders(body);
-            let response = await self.makeRequest(apiEndpoint.GET, apiEndpoint.FUND, body, headers);
+            let response = await self.makeRequest(apiRequest.GET, apiEndpoint.FUND, body, headers);
             return response.data;
         } catch (error) {
             self.errorException("getFunds", error);

@@ -1024,18 +1024,21 @@ breeze.getNames({exchangeCode : 'NSE',stockCode : 'RELIANCE'})
 ```javascript
 
     breeze.previewOrder(
-    stockCode = "ICIBAN",
-    exchangeCode = "NSE",
-    productType = "margin",
-    orderType = "limit",
-    price = "907.05",
-    action = "buy",
-    quantity = "1",
-    specialFlag = "N").then(function(resp){
-    console.log(resp);
-    }).catch((err)=>{
-        console.log(err);
-    })
-    ```
+        {
+        stockCode : "ICIBAN",
+        exchangeCode : "NSE",
+        productType : "margin",
+        orderType  : "limit",
+        price : "907.05",
+        action :"buy",
+        quantity : "1",
+        specialFlag : "N"
+        }
+        ).then(function(resp){
+        console.log(resp);
+        }).catch((err)=>{
+            console.log(err);
+        })
+```
 
 <a href="#index">Back to Index</a>
