@@ -95,6 +95,7 @@ const responseMessage = {
     BLANK_RIGHT_EXPIRY_DATE : "Either Expiry-Date or Right cannot be empty.",
     BLANK_EXPIRY_DATE_STRIKE_PRICE : "Either Expiry-Date or Strike-Price cannot be empty.",
 
+
     //Validation Errors
     EXCHANGE_CODE_ERROR : "Exchange-Code should be either 'nse', or 'nfo'",
     EXCHANGE_CODE_HIST_V2_ERROR : "Exchange-Code should be either 'nse', 'bse' ,'nfo', 'ndx' or 'mcx'",
@@ -121,6 +122,8 @@ const responseMessage = {
     ORDER_NOTIFICATION_SUBSCRIBED : "Order Notification subscribed successfully",
     OHLCV_STREAM_NOT_CONNECTED : "socket server is not connected to OHLCV Stream.",
     OHLCV_STREAM_DISCONNECTED : "socket server for OHLCV Streaming has been disconnected.",
+    ONE_CLICK_STRATEGY_SUBSCRIBED : "Oneclick Strategy Subscribed Successfully",
+    ONE_CLICK_STRATEGY_UNSUBSCRIBED : "Oneclick Strategy Unsubscribed Successfully",
 
     //Stock Subscription Message
     STOCK_SUBSCRIBE_MESSAGE : "Stock {0} subscribed successfully",

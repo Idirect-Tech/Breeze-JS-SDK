@@ -146,6 +146,15 @@ var BreezeConnect = function(params) {
         self.socket.on('stock', self.onMessage);
     };
 
+    self.watchStrategy = function (symbols) {
+        if (!self.socketOrder) {
+            return;
+        } 
+
+        self.socketOrder.emit("join", symbols);
+        self.socketOrder.on('stock', self.onMessage);
+    };
+
     self.onOhlcStream = function(data){
         let parsedData = self.parseOhlcData(data);
         self.onTicks(parsedData);
@@ -684,6 +693,18 @@ var BreezeConnect = function(params) {
                 self.notify()
                 return_object = self.socketConnectionResponse(responseMessage.ORDER_NOTIFICATION_SUBSCRIBED)
             }
+
+            if(stockToken === "one_click_fno")
+            {
+                if(self.socketOrder == null)
+                {
+                    self.connect({isOrder:true}); //for strategy streaming order socket would be used ie livefeeds.icicidirect.com
+                }
+                self.watchStrategy(stockToken);
+                return_object = self.socketConnectionResponse(responseMessage.ONE_CLICK_STRATEGY_SUBSCRIBED);
+                return return_object;
+            }
+
             if(stockToken != ""){
                 if(interval!=""){
                     if(self.socketOHLCV==null){
