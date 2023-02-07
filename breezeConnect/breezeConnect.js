@@ -146,6 +146,24 @@ var BreezeConnect = function(params) {
         self.socket.on('stock', self.onMessage);
     };
 
+    self.watchStrategy = function (symbols) {
+        if (!self.socketOrder) {
+            return;
+        } 
+
+        self.socketOrder.emit("join", symbols);
+        self.socketOrder.on('stock', self.onMessage,true);
+    };
+
+    self.unwatchStrategy = function(symbols)
+    {
+        if(!self.socketOrder)
+        {
+            return;
+        }
+        self.socketOrder.emit("leave",symbols);
+    }
+
     self.onOhlcStream = function(data){
         let parsedData = self.parseOhlcData(data);
         self.onTicks(parsedData);
@@ -168,8 +186,12 @@ var BreezeConnect = function(params) {
         self.socket.on("stock", callback);
     };
 
-    self.onMessage = function(data){
-        data = self.parseData(data);
+    self.onMessage = function(data,isStrategy = false){
+        
+        if(!isStrategy)
+            data = self.parseData(data);
+        else
+            data = self.parseStrategyData(data);
         self.onTicks(data);
     }
 
@@ -439,6 +461,43 @@ var BreezeConnect = function(params) {
         return depth;
     }
 
+    self.parseStrategyData = function(data)
+    {
+        if(data !== null && data !== undefined && data.length == 28)
+        {
+            var strategy_dict = {}
+            strategy_dict['strategy_date'] = data[0]
+            strategy_dict['modification_date'] = data[1]
+            strategy_dict['portfolio_id'] = data[2]
+            strategy_dict['call_action'] = data[3]
+            strategy_dict['portfolio_name'] = data[4]
+            strategy_dict['exchange_code'] = data[5]
+            strategy_dict['product_type'] = data[6]
+            //strategy_dict['INDEX/STOCK'] = data[7]
+            strategy_dict['underlying'] = data[8]
+            strategy_dict['expiry_date'] = data[9]
+            //strategy_dict['OCR_EXER_TYP'] = data[10]
+            strategy_dict['option_type'] = data[11]
+            strategy_dict['strike_price'] = data[12]
+            strategy_dict['action'] = data[13]
+            strategy_dict['recommended_price_from'] = data[14]
+            strategy_dict['recommended_price_to'] = data[15]
+            strategy_dict['minimum_lot_quantity'] = data[16]
+            strategy_dict['last_traded_price'] = data[17]
+            strategy_dict['best_bid_price'] = data[18]
+            strategy_dict['best_offer_price'] = data[19]
+            strategy_dict['last_traded_quantity'] = data[20]
+            strategy_dict['target_price'] = data[21]           
+            strategy_dict['expected_profit_per_lot'] = data[22]
+            strategy_dict['stop_loss_price'] = data[23]
+            strategy_dict['expected_loss_per_lot'] = data[24]
+            strategy_dict['total_margin'] = data[25]
+            strategy_dict['leg_no'] = data[26]
+            strategy_dict['status'] = data[27]
+            return(strategy_dict)
+        }
+    }
+
     self.parseData = function(data){
         if(data !== null && data !== undefined && typeof(data[0]) !== String && data[0].indexOf('!') < 0){
             var order_dict = {}
@@ -684,6 +743,18 @@ var BreezeConnect = function(params) {
                 self.notify()
                 return_object = self.socketConnectionResponse(responseMessage.ORDER_NOTIFICATION_SUBSCRIBED)
             }
+
+            if(stockToken === "one_click_fno")
+            {
+                if(self.socketOrder == null)
+                {
+                    self.connect({isOrder:true}); //for strategy streaming order socket would be used ie livefeeds.icicidirect.com
+                }
+                self.watchStrategy(stockToken);
+                return_object = self.socketConnectionResponse(responseMessage.ONE_CLICK_STRATEGY_SUBSCRIBED);
+                return return_object;
+            }
+
             if(stockToken != ""){
                 if(interval!=""){
                     if(self.socketOHLCV==null){
@@ -735,6 +806,14 @@ var BreezeConnect = function(params) {
             else{
                 return self.socketConnectionResponse(responseMessage.ORDER_REFRESH_NOT_CONNECTED);
             }
+        }
+        if(stockToken === "one_click_fno")
+        {
+            if(self.socketOrder)
+            {
+                self.socketOrder.unwatchStrategy(stockToken);
+            }
+            return self.socketConnectionResponse(responseMessage.ONE_CLICK_STRATEGY_UNSUBSCRIBED);
         }
         
         else if(self.socket){
@@ -852,7 +931,7 @@ var BreezeConnect = function(params) {
         try {
             let body = {}
             headers = self.generateHeaders(body);
-            let response = await self.makeRequest(apiEndpoint.GET, apiEndpoint.FUND, body, headers);
+            let response = await self.makeRequest(apiRequest.GET, apiEndpoint.FUND, body, headers);
             return response.data;
         } catch (error) {
             self.errorException("getFunds", error);
@@ -1129,7 +1208,7 @@ var BreezeConnect = function(params) {
                 else if(action === "" || action === null) {
                     return self.validationErrorResponse(responseMessage.BLANK_ACTION);
                 }
-                else if(order_type === "" || order_type === null) {
+                else if(orderType === "" || orderType === null) {
                     return self.validationErrorResponse(responseMessage.BLANK_ORDER_TYPE);
                 }
                 else if(quantity === "" || quantity === null) {
@@ -1593,7 +1672,57 @@ var BreezeConnect = function(params) {
         }
     };
 
-    self.getMames = async function({exchange = "", stockCode = ""})
+    
+    self.previewOrder = async function({ stockCode="",exchangeCode="",productType="",orderType="",price="",action="",quantity="",expiryDate="",right="",strikePrice="",specialFlag="",stoploss="",orderRateFresh=""})
+    {
+        try
+        {
+            if(exchangeCode === "" || exchangeCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
+            }
+            if(stockCode === "" || stockCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_STOCK_CODE);
+            }
+            if(productType === "" || productType === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_PRODUCT_TYPE_NFO);
+            }
+            if(right !== "" && right !== null && !Boolean(typeList.RIGHT_TYPES.includes(right.toLowerCase()))) {
+                return self.validationErrorResponse(responseMessage.RIGHT_TYPE_ERROR);
+            }
+            if(action === "" || action === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_ACTION);
+            }
+            if(orderType === "" || orderType === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_ORDER_TYPE);
+            }
+
+            body = {
+                "stock_code": stockCode,
+                "exchange_code": exchangeCode,
+                "product": productType,
+                "order_type": orderType,
+                "price": price,
+                "action": action,
+                "quantity": quantity,
+                "expiry_date": expiryDate,
+                "right": right,
+                "strike_price": strikePrice,
+                "specialflag" : specialFlag,
+                "stoploss": stoploss,
+                "order_rate_fresh": orderRateFresh
+                
+            }
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.GET, apiEndpoint.PREVIEW_ORDER, body, headers);
+            return response.data;
+        }
+        catch(error)
+        {
+            self.errorException("previewOrder",error);
+        }
+    }
+
+    self.getNames = async function({exchange = "", stockCode = ""})
     {
         exchange = exchange.toLowerCase();
         stockCode = stockCode.toUpperCase();
