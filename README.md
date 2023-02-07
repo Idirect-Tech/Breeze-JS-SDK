@@ -94,6 +94,22 @@ breeze.subscribeFeeds({stockToken:"4.1!1594"})
         }
 )
 
+// subscribe to oneclick strategy stream
+breeze.subscribeFeeds({stockToken:"one_click_fno"})
+.then(
+        function(resp){
+            console.log(resp);
+        }
+)
+
+// unsubscribe to oneclick strategy stream
+breeze.unsubscribeFeeds({stockToken:"one_click_fno"})
+.then(
+        function(resp){
+            console.log(resp);
+        }
+)
+
 //subscribe stocks feeds
 breeze.subscribeFeeds(
     {
