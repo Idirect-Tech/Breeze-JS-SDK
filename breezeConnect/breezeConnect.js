@@ -155,6 +155,15 @@ var BreezeConnect = function(params) {
         self.socketOrder.on('stock', self.onMessage);
     };
 
+    self.unwatchStrategy = function(symbols)
+    {
+        if(!self.socketOrder)
+        {
+            return;
+        }
+        self.socketOrder.emit("leave",symbols);
+    }
+
     self.onOhlcStream = function(data){
         let parsedData = self.parseOhlcData(data);
         self.onTicks(parsedData);
@@ -756,6 +765,14 @@ var BreezeConnect = function(params) {
             else{
                 return self.socketConnectionResponse(responseMessage.ORDER_REFRESH_NOT_CONNECTED);
             }
+        }
+        if(stockToken === "one_click_fno")
+        {
+            if(self.socketOrder)
+            {
+                self.socketOrder.unwatchStrategy(stockToken);
+            }
+            return self.socketConnectionResponse(responseMessage.ONE_CLICK_STRATEGY_UNSUBSCRIBED);
         }
         
         else if(self.socket){
