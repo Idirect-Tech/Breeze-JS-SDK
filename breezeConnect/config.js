@@ -128,6 +128,15 @@ const responseMessage = {
     //Stock Subscription Message
     STOCK_SUBSCRIBE_MESSAGE : "Stock {0} subscribed successfully",
     STOCK_UNSUBSCRIBE_MESSAGE : "Stock {0} unsubscribed successfully"
+
+    
+}
+
+//ROOM NAME
+
+const roomName = {
+    //roomname for oneclick
+    ONE_CLICK_ROOM : "one_click_fno"
 }
 
 //TUX Mapping
@@ -231,3 +240,4 @@ exports.feedIntervalMap = feedIntervalMap;
 exports.channelIntervalMap = channelIntervalMap;
 exports.tuxToUserMap = tuxToUserMap;
 exports.urls = urls;
+exports.roomName = roomName;

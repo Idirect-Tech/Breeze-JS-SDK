@@ -11,6 +11,7 @@ const typeList = require('./config').typeList;
 const scriptMasterFile = require('./config').scriptMasterFile;
 const feedIntervalMap = require('./config').feedIntervalMap;
 const channelIntervalMap = require('./config').channelIntervalMap;
+const roomName = require('./config').roomName;
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
@@ -744,7 +745,7 @@ var BreezeConnect = function(params) {
                 return_object = self.socketConnectionResponse(responseMessage.ORDER_NOTIFICATION_SUBSCRIBED)
             }
 
-            if(stockToken === "one_click_fno")
+            if(stockToken === roomName.ONE_CLICK_ROOM)
             {
                 if(self.socketOrder == null)
                 {
