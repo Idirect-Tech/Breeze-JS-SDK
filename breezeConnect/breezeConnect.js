@@ -153,7 +153,7 @@ var BreezeConnect = function(params) {
         } 
 
         self.socketOrder.emit("join", symbols);
-        self.socketOrder.on('stock', self.onMessage,true);
+        self.socketOrder.on('stock', self.onMessageStrategy);
     };
 
     self.unwatchStrategy = function(symbols)
@@ -187,12 +187,14 @@ var BreezeConnect = function(params) {
         self.socket.on("stock", callback);
     };
 
-    self.onMessage = function(data,isStrategy = false){
-        
-        if(!isStrategy)
-            data = self.parseData(data);
-        else
-            data = self.parseStrategyData(data);
+    self.onMessage = function(data){
+        data = self.parseData(data);
+        self.onTicks(data);
+    }
+
+    self.onMessageStrategy = function(data)
+    {
+        data = self.parseStrategyData(data);
         self.onTicks(data);
     }
 
