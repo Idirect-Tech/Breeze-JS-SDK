@@ -110,6 +110,23 @@ breeze.unsubscribeFeeds({stockToken:"one_click_fno"})
         }
 )
 
+// subscribe to i_click_2_gain strategy stream
+breeze.subscribeFeeds({stockToken:"i_click_2_gain"})
+.then(
+        function(resp){
+            console.log(resp);
+        }
+)
+
+// unsubscribe to i_click_2_gain strategy stream
+breeze.unsubscribeFeeds({stockToken:"i_click_2_gain"})
+.then(
+        function(resp){
+            console.log(resp);
+        }
+)
+
+
 //subscribe stocks feeds
 breeze.subscribeFeeds(
     {

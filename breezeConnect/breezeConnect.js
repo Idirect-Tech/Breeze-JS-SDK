@@ -50,7 +50,7 @@ var BreezeConnect = function(params) {
 
     self.errorException = function(funcName,error){
         var message = `${funcName}() Error`;
-        throw message + error.stack();
+        throw message + error.stack;
     }
 
     String.prototype.format = function () {
@@ -499,6 +499,31 @@ var BreezeConnect = function(params) {
             strategy_dict['status'] = data[27]
             return(strategy_dict)
         }
+        if(data !== null && data !== undefined && data.length == 19){
+            var iclick_data = {}
+            //iclick_data['sequence_number'] = data[0]
+            iclick_data['stock_name'] = data[0]
+            iclick_data['stock_code'] = data[1]
+            iclick_data['action_type'] = data[2]
+            iclick_data['expiry_date'] = data[3]
+            iclick_data['strike_price'] = data[4]
+            iclick_data['option_type'] = data[5]
+            iclick_data['stock_description'] = data[6]
+            iclick_data['recommended_price_and_date'] = data[7]
+            iclick_data['recommended_price_from'] = data[8]
+            iclick_data['recommended_price_to'] = data[9]
+            iclick_data['recommended_date'] = data[10]
+            iclick_data['target_price'] = data[11]
+            iclick_data['sltp_price'] = data[12]
+            iclick_data['part_profit_percentage'] = data[13]
+            iclick_data['profit_price'] = data[14]
+            iclick_data['exit_price'] = data[15]
+            iclick_data['recommended_update'] = data[16]
+            iclick_data['iclick_status'] = data[17]
+            iclick_data['subscription_type'] = data[18]
+            return(iclick_data)
+
+        }
     }
 
     self.parseData = function(data){
@@ -747,7 +772,7 @@ var BreezeConnect = function(params) {
                 return_object = self.socketConnectionResponse(responseMessage.ORDER_NOTIFICATION_SUBSCRIBED)
             }
 
-            if(stockToken === roomName.ONE_CLICK_ROOM)
+            if(stockToken === roomName.ONE_CLICK_ROOM || stockToken === roomName.I_CLICK_2_GAIN)
             {
                 if(self.socketOrder == null)
                 {
@@ -1797,3 +1822,45 @@ var BreezeConnect = function(params) {
 }
 
 exports.BreezeConnect = BreezeConnect;
+
+app_key = "#aL9488x480^5E0744ws96969xZ@4GB2"
+secret_key = "98a#305@7M1442yk6c9105CwY0956157"
+session_token = '4272740'
+
+async function api_calls(){
+    var breeze = new BreezeConnect({"appKey":app_key});
+    await breeze.generateSession(secret_key, session_token).then(function(resp){
+        console.log(resp);
+    }).catch(function(err){
+        console.log(err)
+    });
+   
+    function on_ticks(ticks){
+        console.log(ticks);
+    }
+    breeze.onTicks = on_ticks;
+    breeze.getCustomerDetails("4223455").then(function(resp){
+        console.log(resp);
+    });
+
+   //await breeze.wsConnect();
+   //await breeze.subscribeFeeds({stockToken:"4.1!1594"}).then(
+   //     function(resp){
+   //         console.log(resp);
+   //     }
+   // ).catch((err)=>console.log(err));
+    //await breeze.subscribeFeeds({getOrderNotification : true}).then(data => console.log(data));
+
+   /* await breeze.placeOrder({
+        stockCode : "ITC",
+        exchangeCode : "NSE",
+        product : "cash",
+        action : "buy",
+        orderType : "limit",
+        quantity : "1",
+        price : "340",
+        validity : "day"}).then((response)=>console.log(response)).catch(err => console.log(err));*/
+        
+}
+
+api_calls()

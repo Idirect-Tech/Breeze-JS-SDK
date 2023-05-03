@@ -136,7 +136,8 @@ const responseMessage = {
 
 const roomName = {
     //roomname for oneclick
-    ONE_CLICK_ROOM : "one_click_fno"
+    ONE_CLICK_ROOM : "one_click_fno",
+    I_CLICK_2_GAIN : "i_click_2_gain"
 }
 
 //TUX Mapping
