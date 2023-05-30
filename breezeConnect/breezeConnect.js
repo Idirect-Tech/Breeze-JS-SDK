@@ -71,7 +71,7 @@ var BreezeConnect = function(params) {
                 extraHeaders:{
                     "User-Agent": "node-socketio[client]/socket"
                 },
-                reconnectionAttempts: 10,
+                //reconnectionAttempts: 10,
                 transports: ["websocket"],
             });
         }
@@ -85,7 +85,7 @@ var BreezeConnect = function(params) {
                 extraHeaders:{
                     "User-Agent": "node-socketio[client]/socket"
                 },
-                reconnectionAttempts: 10,
+                //reconnectionAttempts: 10,
                 transports: ["websocket"],
             });
         }
