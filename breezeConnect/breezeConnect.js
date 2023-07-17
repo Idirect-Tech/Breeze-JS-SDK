@@ -1752,6 +1752,67 @@ var BreezeConnect = function(params) {
         }
     }
 
+    self.limitCalculator = async function({strikePrice = "",productType = "",expiryDate = "",underlying = "",exchangeCode = "",orderFlow = "",stopLossTrigger = "",optionType = "",sourceFlag = "",limitRate = "",orderReference = "",availableQuantity = "",marketType = "",freshOrderLimit = ""})
+    {
+        try
+        {
+            if(strikePrice === "" || strikePrice === null){
+                return self.validationErrorResponse(responseMessage.BLANK_STRIKE_PRICE);
+            }
+            else if(productType === "" || productType === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_PRODUCT_TYPE);
+            }
+            else if(sourceFlag === "" || sourceFlag === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_SOURCE_FLAG);
+            }
+            else if(underlying === "" || underlying === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_UNDERLYING);
+            }
+            else if(exchangeCode === "" || exchangeCode === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
+            }
+            else if(orderFlow === "" || orderFlow === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_ORDER_FLOW);
+            }
+            else if(optionType === "" || optionType === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_OPTION_TYPE);
+            }
+            else if(stopLossTrigger === "" || stopLossTrigger === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_STOP_LOSS_TRIGGER);
+            }
+            let body = {
+                "strike_price": strikePrice,                                    
+                "product_type":productType,                 
+                "expiry_date": expiryDate,
+                "underlying" : underlying,
+                "exchange_code":expiryDate,
+                "order_flow" :orderFlow,
+                "stop_loss_trigger":stopLossTrigger,
+                "option_type":optionType,
+                "source_flag" : sourceFlag,
+                "limit_rate" : limitRate,
+                "order_reference": orderReference,
+                "available_quantity":availableQuantity,
+                "market_type": marketType,
+                "fresh_order_limit":freshOrderLimit
+            };
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.POST, apiEndpoint.LIMITCALCULATOR, body, headers);
+            return response.data;
+        }
+        catch(error)
+        {
+            self.errorException("limitCalculator",error);
+        }
+    }
+
     self.getNames = async function({exchange = "", stockCode = ""})
     {
         exchange = exchange.toLowerCase();
@@ -1824,45 +1885,3 @@ var BreezeConnect = function(params) {
 }
 
 exports.BreezeConnect = BreezeConnect;
-
-app_key = "#aL9488x480^5E0744ws96969xZ@4GB2"
-secret_key = "98a#305@7M1442yk6c9105CwY0956157"
-session_token = '4272740'
-
-async function api_calls(){
-    var breeze = new BreezeConnect({"appKey":app_key});
-    await breeze.generateSession(secret_key, session_token).then(function(resp){
-        console.log(resp);
-    }).catch(function(err){
-        console.log(err)
-    });
-   
-    function on_ticks(ticks){
-        console.log(ticks);
-    }
-    breeze.onTicks = on_ticks;
-    breeze.getCustomerDetails("4223455").then(function(resp){
-        console.log(resp);
-    });
-
-   //await breeze.wsConnect();
-   //await breeze.subscribeFeeds({stockToken:"4.1!1594"}).then(
-   //     function(resp){
-   //         console.log(resp);
-   //     }
-   // ).catch((err)=>console.log(err));
-    //await breeze.subscribeFeeds({getOrderNotification : true}).then(data => console.log(data));
-
-   /* await breeze.placeOrder({
-        stockCode : "ITC",
-        exchangeCode : "NSE",
-        product : "cash",
-        action : "buy",
-        orderType : "limit",
-        quantity : "1",
-        price : "340",
-        validity : "day"}).then((response)=>console.log(response)).catch(err => console.log(err));*/
-        
-}
-
-api_calls()
