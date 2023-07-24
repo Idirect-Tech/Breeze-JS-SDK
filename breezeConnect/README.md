@@ -590,6 +590,42 @@ breeze.placeOrder(
 <br>
 <a href="#index">Back to Index</a>
 
+<h4 id="place_order">Placing a btst Order from your account.</h4>
+
+
+```javascript
+
+breeze.placeOrder(
+    {
+        stockCode:"ICIBAN",
+        exchangeCode:"NFO",
+        product:"futures",
+        action:"buy",
+        orderType:"limit",
+        stoploss:"0",
+        quantity:"3200",
+        price:"200",
+        validity:"day",
+        validityDate:"2022-08-22T06:00:00.000Z",
+        disclosedQuantity:"0",
+        expiryDate:"2022-08-25T06:00:00.000Z",
+        right:"others",
+        strike_price:"0",
+        userRemark:"Test",
+        settlementId: "2023008",
+        orderSegmentCode = "N"
+    }                
+)
+.then(function(resp){
+    console.log(resp);
+})
+
+```                    
+
+<br>
+<a href="#index">Back to Index</a>
+<hr>
+
 <h4 id="place_order2">Placing an Option Order from your account.</h4>
 
 

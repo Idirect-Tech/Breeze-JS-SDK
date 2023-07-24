@@ -849,7 +849,7 @@ var BreezeConnect = function(params) {
         else if(self.socket){
             if(stockToken!=""){
                 if(interval!="")
-                    self.unwatch_stream_data(stockToken);
+                    self.unwatchStreamData(stockToken);
                 else
                     self.unwatch(stockToken);
                 return self.socketConnectionResponse(responseMessage.STOCK_UNSUBSCRIBE_MESSAGE.format(stockToken));
@@ -857,7 +857,7 @@ var BreezeConnect = function(params) {
             else{
                 var tokenDict = self.getStockTokenValue({exchangeCode:exchangeCode, stockCode:stockCode, productType:productType, expiryDate:expiryDate, strikePrice:strikePrice, right:right, getExchangeQuotes:getExchangeQuotes, getMarketDepth:getMarketDepth})
                 if(interval!="")
-                    self.unwatch_stream_data(stockToken["exch_quote_token"]);
+                    self.unwatchStreamData(stockToken["exch_quote_token"],interval);
                 else{
                     if(tokenDict["exch_quote_token"] != false)
                         self.unwatch(tokenDict["exch_quote_token"])
@@ -1223,9 +1223,9 @@ var BreezeConnect = function(params) {
         }
     };
 
-    self.placeOrder = async function({stockCode="", exchangeCode="", product="", action="", orderType="", stoploss="", quantity="", price="", validity="", validityDate="", disclosedQuantity="", expiryDate="", right="", strikePrice="", userRemark="", orderTypeFresh = "", orderRateFresh = ""}) {
+    self.placeOrder = async function({stockCode="", exchangeCode="", product="", action="", orderType="", stoploss="", quantity="", price="", validity="", validityDate="", disclosedQuantity="", expiryDate="", right="", strikePrice="", userRemark="", orderTypeFresh = "", orderRateFresh = "",settlementId = "",orderSegmentCode = ""}) {
         try {
-            if(stockCode === "" || stockCode === null || exchangeCode === "" || exchangeCode === null || product === "" || product === null || action === "" || action === null || order_type === "" || order_type === null || quantity === "" || quantity === null || price === "" || price === null || action === "" || action == null) {
+            if(stockCode === "" || stockCode === null || exchangeCode === "" || exchangeCode === null || product === "" || product === null || action === "" || action === null || orderType === "" || orderType === null || quantity === "" || quantity === null || price === "" || price === null || action === "" || action == null) {
                 if(stockCode === "" || stockCode === null) {
                     return self.validationErrorResponse(responseMessage.BLANK_STOCK_CODE);
                 }
@@ -1273,6 +1273,8 @@ var BreezeConnect = function(params) {
                 "quantity": quantity,
                 "price": price,
                 "validity": validity,
+                "order_segment_code" : orderSegmentCode,
+                "settlement_id" : settlementId
             };
 
             if(stoploss !== "" && stoploss !== null) {
@@ -1395,7 +1397,7 @@ var BreezeConnect = function(params) {
                     return self.validationErrorResponse(responseMessage.BLANK_ORDER_ID);
                 }
             }
-            else if(order_type !== "" && order_type !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
+            else if(orderType !== "" && orderType !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.BLANK_ORDER_TYPE);
             }
             else if(validity !== "" && validity !== null && !Boolean(typeList.VALIDITY_TYPES.includes(validity.toLowerCase()))) {
@@ -1606,7 +1608,7 @@ var BreezeConnect = function(params) {
             else if(validity !== "" && validity !== null && !Boolean(typeList.VALIDITY_TYPES.includes(validity.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.VALIDITY_TYPE_ERROR);
             }
-            else if(order_type !== "" && order_type !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
+            else if(orderType !== "" && orderType !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.ORDER_TYPE_ERROR);
             }
 
@@ -1883,5 +1885,4 @@ var BreezeConnect = function(params) {
     };
 
 }
-
 exports.BreezeConnect = BreezeConnect;
