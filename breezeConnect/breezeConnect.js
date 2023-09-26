@@ -1815,6 +1815,25 @@ var BreezeConnect = function(params) {
         }
     }
 
+    self.marginCalculator = async function({payloadList = "",exchangeCode = ""})
+    {
+        try
+        {
+            let body = {
+                "list_of_positions" : payloadList,
+                "exchange_code" : exchangeCode
+            }
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.POST, apiEndpoint.MARGINCALCULATOR, body, headers);
+            return response.data;
+
+        }
+        catch(error)
+        {
+            self.errorException("marginCalculator",error);
+        }
+    }
+
     self.getNames = async function({exchange = "", stockCode = ""})
     {
         exchange = exchange.toLowerCase();

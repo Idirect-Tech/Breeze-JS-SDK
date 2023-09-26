@@ -306,6 +306,8 @@ For Streaming OHLCV, interval must not be empty and must be equal to either of t
  <li><a href="#trade_detail">get_trade_detail</a></li>
  <li><a href="#get_names"> get_names </a></li>
  <li><a href="#preview_order"> preview_order </a></li>
+ <li><a href="#limit_calculator"> limit_calculator </a></li>
+ <li><a href="#margin_calculator">margin_calculator </a></li>
 </ul>
 </div>
 
@@ -1111,3 +1113,101 @@ breeze.getNames({exchangeCode : 'NSE',stockCode : 'RELIANCE'})
 ```
 
 <a href="#index">Back to Index</a>
+
+<hr>
+
+<h4 id = "limit_calculator">Limit Calculator </h4>
+
+```javascript
+
+breeze.limitCalculator(strikePrice = "19200",                                    
+    productType = "optionplus",                 
+    expiryDate  = "06-JUL-2023",
+    underlying = "NIFTY",
+    exchangeCode = "NFO",
+    orderFlow = "Buy",
+    stopLossTrigger = "200.00",
+    optionType = "Call",
+    sourceFlag = "P",
+    limitRate = "",
+    orderReference = "",
+    availableQuantity = "",
+    marketType = "limit",
+    freshOrderLimit = "177.70")
+
+```
+
+<a href="#index">Back to Index</a>
+
+<hr>
+
+<h4 id = "margin_calculator">margin calculator </h4>
+
+```javascript
+
+    breeze.marginCalculator([{
+            "strike_price": "0",
+            "quantity": "15",
+            "right": "others",
+            "product": "futures",
+            "action": "buy",
+            "price": "46230.85",
+            "expiry_date": "31-Aug-2023",
+            "stock_code": "CNXBAN",
+            "cover_order_flow": "N",
+            "fresh_order_type": "N",
+            "cover_limit_rate": "0",
+            "cover_sltp_price": "0",
+            "fresh_limit_rate": "0",
+            "open_quantity": "0"
+        },
+        {
+            "strike_price": "37000",
+            "quantity": "15",
+            "right": "Call",
+            "product": "options",
+            "action": "buy",
+            "price": "9100",
+            "expiry_date": "27-Jul-2023",
+            "stock_code": "CNXBAN",
+            "cover_order_flow": "N",
+            "fresh_order_type": "N",
+            "cover_limit_rate": "0",
+            "cover_sltp_price": "0",
+            "fresh_limit_rate": "0",
+            "open_quantity": "0"
+        },
+        {
+            "strike_price": "0",
+            "quantity": "50",
+            "right": "others",
+            "product": "futureplus",
+            "action": "buy",
+            "price": "19800",
+            "expiry_date": "27-Jul-2023",
+            "stock_code": "NIFTY",
+            "cover_order_flow": "N",
+            "fresh_order_type": "N",
+            "cover_limit_rate": "0",
+            "cover_sltp_price": "0",
+            "fresh_limit_rate": "0",
+            "open_quantity": "0"
+        },
+        {
+            "strike_price": "19600",
+            "quantity": "50",
+            "right": "call",
+            "product": "optionplus",
+            "action": "buy",
+            "price": "245.05",
+            "expiry_date": "27-Jul-2023",
+            "stock_code": "NIFTY",
+            "cover_order_flow": "sell",
+            "fresh_order_type": "limit",
+            "cover_limit_rate": "180.00",
+            "cover_sltp_price": "200.00",
+            "fresh_limit_rate": "245.05",
+            "open_quantity": "50"
+        }],exchangeCode = "NFO")
+
+```

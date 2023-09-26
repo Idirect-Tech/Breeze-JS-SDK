@@ -45,7 +45,8 @@ const apiEndpoint = {
     OPT_CHAIN:"optionchain",
     SQUARE_OFF:"squareoff",
     PREVIEW_ORDER:"preview_order" ,
-    LIMITCALCULATOR:"fnolmtpriceandqtycal"    
+    LIMITCALCULATOR:"fnolmtpriceandqtycal",
+    MARGINCALCULATOR: "margincalculator" 
 }
 
 //Exception Messages
