@@ -50,7 +50,7 @@ var BreezeConnect = function(params) {
 
     self.errorException = function(funcName,error){
         var message = `${funcName}() Error`;
-        throw message + error.stack();
+        throw message + error.stack;
     }
 
     String.prototype.format = function () {
@@ -71,6 +71,7 @@ var BreezeConnect = function(params) {
                 extraHeaders:{
                     "User-Agent": "node-socketio[client]/socket"
                 },
+                //reconnectionAttempts: 10,
                 transports: ["websocket"],
             });
         }
@@ -84,6 +85,7 @@ var BreezeConnect = function(params) {
                 extraHeaders:{
                     "User-Agent": "node-socketio[client]/socket"
                 },
+                //reconnectionAttempts: 10,
                 transports: ["websocket"],
             });
         }
@@ -153,7 +155,7 @@ var BreezeConnect = function(params) {
         } 
 
         self.socketOrder.emit("join", symbols);
-        self.socketOrder.on('stock', self.onMessage,true);
+        self.socketOrder.on('stock', self.onMessageStrategy);
     };
 
     self.unwatchStrategy = function(symbols)
@@ -187,12 +189,14 @@ var BreezeConnect = function(params) {
         self.socket.on("stock", callback);
     };
 
-    self.onMessage = function(data,isStrategy = false){
-        
-        if(!isStrategy)
-            data = self.parseData(data);
-        else
-            data = self.parseStrategyData(data);
+    self.onMessage = function(data){
+        data = self.parseData(data);
+        self.onTicks(data);
+    }
+
+    self.onMessageStrategy = function(data)
+    {
+        data = self.parseStrategyData(data);
         self.onTicks(data);
     }
 
@@ -497,6 +501,31 @@ var BreezeConnect = function(params) {
             strategy_dict['status'] = data[27]
             return(strategy_dict)
         }
+        if(data !== null && data !== undefined && data.length == 19){
+            var iclick_data = {}
+            //iclick_data['sequence_number'] = data[0]
+            iclick_data['stock_name'] = data[0]
+            iclick_data['stock_code'] = data[1]
+            iclick_data['action_type'] = data[2]
+            iclick_data['expiry_date'] = data[3]
+            iclick_data['strike_price'] = data[4]
+            iclick_data['option_type'] = data[5]
+            iclick_data['stock_description'] = data[6]
+            iclick_data['recommended_price_and_date'] = data[7]
+            iclick_data['recommended_price_from'] = data[8]
+            iclick_data['recommended_price_to'] = data[9]
+            iclick_data['recommended_date'] = data[10]
+            iclick_data['target_price'] = data[11]
+            iclick_data['sltp_price'] = data[12]
+            iclick_data['part_profit_percentage'] = data[13]
+            iclick_data['profit_price'] = data[14]
+            iclick_data['exit_price'] = data[15]
+            iclick_data['recommended_update'] = data[16]
+            iclick_data['iclick_status'] = data[17]
+            iclick_data['subscription_type'] = data[18]
+            return(iclick_data)
+
+        }
     }
 
     self.parseData = function(data){
@@ -745,7 +774,7 @@ var BreezeConnect = function(params) {
                 return_object = self.socketConnectionResponse(responseMessage.ORDER_NOTIFICATION_SUBSCRIBED)
             }
 
-            if(stockToken === roomName.ONE_CLICK_ROOM)
+            if(stockToken === roomName.ONE_CLICK_ROOM || stockToken === roomName.I_CLICK_2_GAIN)
             {
                 if(self.socketOrder == null)
                 {
@@ -820,7 +849,7 @@ var BreezeConnect = function(params) {
         else if(self.socket){
             if(stockToken!=""){
                 if(interval!="")
-                    self.unwatch_stream_data(stockToken);
+                    self.unwatchStreamData(stockToken);
                 else
                     self.unwatch(stockToken);
                 return self.socketConnectionResponse(responseMessage.STOCK_UNSUBSCRIBE_MESSAGE.format(stockToken));
@@ -828,7 +857,7 @@ var BreezeConnect = function(params) {
             else{
                 var tokenDict = self.getStockTokenValue({exchangeCode:exchangeCode, stockCode:stockCode, productType:productType, expiryDate:expiryDate, strikePrice:strikePrice, right:right, getExchangeQuotes:getExchangeQuotes, getMarketDepth:getMarketDepth})
                 if(interval!="")
-                    self.unwatch_stream_data(stockToken["exch_quote_token"]);
+                    self.unwatchStreamData(stockToken["exch_quote_token"],interval);
                 else{
                     if(tokenDict["exch_quote_token"] != false)
                         self.unwatch(tokenDict["exch_quote_token"])
@@ -1194,9 +1223,9 @@ var BreezeConnect = function(params) {
         }
     };
 
-    self.placeOrder = async function({stockCode="", exchangeCode="", product="", action="", orderType="", stoploss="", quantity="", price="", validity="", validityDate="", disclosedQuantity="", expiryDate="", right="", strikePrice="", userRemark="", orderTypeFresh = "", orderRateFresh = ""}) {
+    self.placeOrder = async function({stockCode="", exchangeCode="", product="", action="", orderType="", stoploss="", quantity="", price="", validity="", validityDate="", disclosedQuantity="", expiryDate="", right="", strikePrice="", userRemark="", orderTypeFresh = "", orderRateFresh = "",settlementId = "",orderSegmentCode = ""}) {
         try {
-            if(stockCode === "" || stockCode === null || exchangeCode === "" || exchangeCode === null || product === "" || product === null || action === "" || action === null || order_type === "" || order_type === null || quantity === "" || quantity === null || price === "" || price === null || action === "" || action == null) {
+            if(stockCode === "" || stockCode === null || exchangeCode === "" || exchangeCode === null || product === "" || product === null || action === "" || action === null || orderType === "" || orderType === null || quantity === "" || quantity === null || price === "" || price === null || action === "" || action == null) {
                 if(stockCode === "" || stockCode === null) {
                     return self.validationErrorResponse(responseMessage.BLANK_STOCK_CODE);
                 }
@@ -1244,6 +1273,8 @@ var BreezeConnect = function(params) {
                 "quantity": quantity,
                 "price": price,
                 "validity": validity,
+                "order_segment_code" : orderSegmentCode,
+                "settlement_id" : settlementId
             };
 
             if(stoploss !== "" && stoploss !== null) {
@@ -1366,7 +1397,7 @@ var BreezeConnect = function(params) {
                     return self.validationErrorResponse(responseMessage.BLANK_ORDER_ID);
                 }
             }
-            else if(order_type !== "" && order_type !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
+            else if(orderType !== "" && orderType !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.BLANK_ORDER_TYPE);
             }
             else if(validity !== "" && validity !== null && !Boolean(typeList.VALIDITY_TYPES.includes(validity.toLowerCase()))) {
@@ -1577,7 +1608,7 @@ var BreezeConnect = function(params) {
             else if(validity !== "" && validity !== null && !Boolean(typeList.VALIDITY_TYPES.includes(validity.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.VALIDITY_TYPE_ERROR);
             }
-            else if(order_type !== "" && order_type !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
+            else if(orderType !== "" && orderType !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.ORDER_TYPE_ERROR);
             }
 
@@ -1723,6 +1754,86 @@ var BreezeConnect = function(params) {
         }
     }
 
+    self.limitCalculator = async function({strikePrice = "",productType = "",expiryDate = "",underlying = "",exchangeCode = "",orderFlow = "",stopLossTrigger = "",optionType = "",sourceFlag = "",limitRate = "",orderReference = "",availableQuantity = "",marketType = "",freshOrderLimit = ""})
+    {
+        try
+        {
+            if(strikePrice === "" || strikePrice === null){
+                return self.validationErrorResponse(responseMessage.BLANK_STRIKE_PRICE);
+            }
+            else if(productType === "" || productType === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_PRODUCT_TYPE);
+            }
+            else if(sourceFlag === "" || sourceFlag === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_SOURCE_FLAG);
+            }
+            else if(underlying === "" || underlying === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_UNDERLYING);
+            }
+            else if(exchangeCode === "" || exchangeCode === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
+            }
+            else if(orderFlow === "" || orderFlow === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_ORDER_FLOW);
+            }
+            else if(optionType === "" || optionType === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_OPTION_TYPE);
+            }
+            else if(stopLossTrigger === "" || stopLossTrigger === null)
+            {
+                return self.validationErrorResponse(responseMessage.BLANK_STOP_LOSS_TRIGGER);
+            }
+            let body = {
+                "strike_price": strikePrice,                                    
+                "product_type":productType,                 
+                "expiry_date": expiryDate,
+                "underlying" : underlying,
+                "exchange_code":expiryDate,
+                "order_flow" :orderFlow,
+                "stop_loss_trigger":stopLossTrigger,
+                "option_type":optionType,
+                "source_flag" : sourceFlag,
+                "limit_rate" : limitRate,
+                "order_reference": orderReference,
+                "available_quantity":availableQuantity,
+                "market_type": marketType,
+                "fresh_order_limit":freshOrderLimit
+            };
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.POST, apiEndpoint.LIMITCALCULATOR, body, headers);
+            return response.data;
+        }
+        catch(error)
+        {
+            self.errorException("limitCalculator",error);
+        }
+    }
+
+    self.marginCalculator = async function({payloadList = "",exchangeCode = ""})
+    {
+        try
+        {
+            let body = {
+                "list_of_positions" : payloadList,
+                "exchange_code" : exchangeCode
+            }
+            let headers = self.generateHeaders(body);
+            let response = await self.makeRequest(apiRequest.POST, apiEndpoint.MARGINCALCULATOR, body, headers);
+            return response.data;
+
+        }
+        catch(error)
+        {
+            self.errorException("marginCalculator",error);
+        }
+    }
+
     self.getNames = async function({exchange = "", stockCode = ""})
     {
         exchange = exchange.toLowerCase();
@@ -1793,5 +1904,4 @@ var BreezeConnect = function(params) {
     };
 
 }
-
 exports.BreezeConnect = BreezeConnect;

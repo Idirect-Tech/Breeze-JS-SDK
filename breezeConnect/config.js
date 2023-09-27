@@ -44,7 +44,9 @@ const apiEndpoint = {
     TRADE:"trades",
     OPT_CHAIN:"optionchain",
     SQUARE_OFF:"squareoff",
-    PREVIEW_ORDER:"preview_order"    
+    PREVIEW_ORDER:"preview_order" ,
+    LIMITCALCULATOR:"fnolmtpriceandqtycal",
+    MARGINCALCULATOR: "margincalculator" 
 }
 
 //Exception Messages
@@ -94,6 +96,12 @@ const responseMessage = {
     BLANK_RIGHT_STRIKE_PRICE : "Either Right or Strike-Price cannot be empty.",
     BLANK_RIGHT_EXPIRY_DATE : "Either Expiry-Date or Right cannot be empty.",
     BLANK_EXPIRY_DATE_STRIKE_PRICE : "Either Expiry-Date or Strike-Price cannot be empty.",
+    BLANK_OPTION_TYPE : "Exchange-Code cannot be empty",
+    BLANK_SOURCE_FLAG : "SOURCE_FLAG cannot be empty",
+    BLANK_OPTION_TYPE : "option-type cannot be empty",
+    BLANK_ORDER_FLOW : "order-flow cannot be empty",
+    BLANK_UNDERLYING : "underlying cannot be empty",
+    BLANK_STOP_LOSS_TRIGGER : "stop loss trigger cannot be empty",
 
 
     //Validation Errors
@@ -136,7 +144,8 @@ const responseMessage = {
 
 const roomName = {
     //roomname for oneclick
-    ONE_CLICK_ROOM : "one_click_fno"
+    ONE_CLICK_ROOM : "one_click_fno",
+    I_CLICK_2_GAIN : "i_click_2_gain"
 }
 
 //TUX Mapping
@@ -194,7 +203,7 @@ const typeList = {
     INTERVAL_TYPES : ["1minute", "5minute", "30minute", "1day"],
     INTERVAL_TYPES_HIST_V2 : ["1second","1minute", "5minute", "30minute", "1day"],
     INTERVAL_TYPES_STREAM_OHLC : ["1second","1minute", "5minute", "30minute"],
-    PRODUCT_TYPES : ["futures", "options", "futureplus", "optionplus", "cash", "eatm", "margin"],
+    PRODUCT_TYPES : ["futures", "options", "futureplus", "optionplus", "cash", "eatm", "margin","btst","mtf"],
     PRODUCT_TYPES_HIST : ["futures", "options", "futureplus", "optionplus"],
     PRODUCT_TYPES_HIST_V2 : ["futures", "options","cash"],
     RIGHT_TYPES : ["call", "put", "others"],
