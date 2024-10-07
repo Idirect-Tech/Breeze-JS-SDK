@@ -355,13 +355,13 @@ var BreezeConnect = function(params) {
                         }
                     }
                     if(exchangeCode.toLowerCase() === "ndx") {
-                        tokenValue = self.stockScriptDictList[2][contract_detail_value] || false;
+                        tokenValue = self.stockScriptDictList[2][contractDetailValue] || false;
                     }
                     else if(exchangeCode.toLowerCase() === "mcx") {
-                        tokenValue = self.stockScriptDictList[3][contract_detail_value] || false;
+                        tokenValue = self.stockScriptDictList[3][contractDetailValue] || false;
                     }
                     else if(exchangeCode.toLowerCase() === "nfo") {
-                        tokenValue = self.stockScriptDictList[4][contract_detail_value] || false;
+                        tokenValue = self.stockScriptDictList[4][contractDetailValue] || false;
                     }
                 }
                 if(tokenValue === false) {
