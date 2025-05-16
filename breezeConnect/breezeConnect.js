@@ -1037,9 +1037,9 @@ var BreezeConnect = function(params) {
             else if(stockCode === "" || stockCode === null) {
                 return self.validationErrorResponse(responseMessage.BLANK_STOCK_CODE);
             }
-            else if(exchangeCode.toLowerCase() === "nfo") {
+            else if(exchangeCode.toLowerCase() === "nfo" || exchangeCode.toLowerCase() === "bfo") {
                 if(productType === "" || productType === null) {
-                      return self.validationErrorResponse(responseMessage.BLANK_PRODUCT_TYPE_NFO);
+                      return self.validationErrorResponse(responseMessage.BLANK_PRODUCT_TYPE_NFO_BFO);
                 }
                 else if(!Boolean(typeList.PRODUCT_TYPES_HIST.includes(productType.toLowerCase()))) {
                     return self.validationErrorResponse(responseMessage.PRODUCT_TYPE_ERROR);
@@ -1535,7 +1535,7 @@ var BreezeConnect = function(params) {
 
     self.getOptionChainQuotes = async function({stockCode="", exchangeCode="", expiryDate="", productType="", right="", strikePrice=""}) {
         try {
-            if(exchangeCode === "" || exchangeCode === null || exchangeCode.toLowerCase()!=="nfo") {
+            if(exchangeCode === "" || exchangeCode === null || exchangeCode.toLowerCase()!=="nfo" || exchangeCode.toLowerCase()!=="bfo") {
                 return self.validationErrorResponse(responseMessage.OPT_CHAIN_EXCH_CODE_ERROR);
             }
             else if(productType === "" || productType === null) {
