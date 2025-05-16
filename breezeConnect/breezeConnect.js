@@ -303,7 +303,13 @@ var BreezeConnect = function(params) {
                 "NDX":"13.",
                 "MCX":"6.",
                 "NFO":"4.",
+                "BFO":"2.",
             };
+
+            if (self.interval == "" || self.interval == null) {
+                exchangeCodeList["BFO"] = "8.";
+            }
+
             var exchangeCodeName = exchangeCodeList[exchangeCode] || false;
 
             if(exchangeCodeName === false) {
@@ -355,13 +361,16 @@ var BreezeConnect = function(params) {
                         }
                     }
                     if(exchangeCode.toLowerCase() === "ndx") {
-                        tokenValue = self.stockScriptDictList[2][contract_detail_value] || false;
+                        tokenValue = self.stockScriptDictList[2][contractDetailValue] || false;
                     }
                     else if(exchangeCode.toLowerCase() === "mcx") {
-                        tokenValue = self.stockScriptDictList[3][contract_detail_value] || false;
+                        tokenValue = self.stockScriptDictList[3][contractDetailValue] || false;
                     }
                     else if(exchangeCode.toLowerCase() === "nfo") {
-                        tokenValue = self.stockScriptDictList[4][contract_detail_value] || false;
+                        tokenValue = self.stockScriptDictList[4][contractDetailValue] || false;
+                    }
+                    else if(exchangeCode.toLowerCase() === "bfo") {
+                        tokenValue = self.stockScriptDictList[5][contractDetailValue] || false;
                     }
                 }
                 if(tokenValue === false) {
@@ -401,7 +410,7 @@ var BreezeConnect = function(params) {
                 "datetime":splitData[7]
             }
         }
-        else if(Boolean(["NFO","NDX","MCX"].includes(splitData[0]))){
+        else if(Boolean(["NFO","NDX","MCX","BFO"].includes(splitData[0]))){
             if(splitData.length == 13){
                 parsedData = {
                     "interval":feedIntervalMap[splitData[12]],
@@ -724,8 +733,8 @@ var BreezeConnect = function(params) {
 
     self.getStockScriptList= async function(){
         try{
-            self.stockScriptDictList = [{},{},{},{},{}]
-            self.tokenScriptDictList = [{},{},{},{},{}]
+            self.stockScriptDictList = [{},{},{},{},{},{}]
+            self.tokenScriptDictList = [{},{},{},{},{},{}]
 
             var download = await axios.get(url=urls.STOCK_SCRIPT_CSV_URL)
                             .then(function(resp){return resp});
@@ -752,6 +761,11 @@ var BreezeConnect = function(params) {
                 else if(row[2] == "NFO"){
                     self.stockScriptDictList[4][row[7]]=row[5]
                     self.tokenScriptDictList[4][row[5]]=[row[7],row[1]]
+                }
+                else if(row[2] == "BFO"){
+                    self.stockScriptDictList[5][row[7]]=row[5]
+                    self.tokenScriptDictList[5][row[5]]=[row[7],row[1]]
+
                 }
             }
         }catch(error){
