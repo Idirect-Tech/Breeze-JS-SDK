@@ -374,6 +374,10 @@ var BreezeConnect = function(params) {
                     else if(exchangeCode.toLowerCase() === "bfo") {
                         tokenValue = self.stockScriptDictList[5][contractDetailValue] || false;
                     }
+                    else if(exchangeCode.toLowerCase() === "bfo") {
+                        tokenValue = self.stockScriptDictList[5][contractDetailValue] || false;
+
+                    }
                 }
                 if(tokenValue === false) {
                     self.subscribeException(exceptionMessage.STOCK_INVALID_EXCEPTION);
@@ -829,6 +833,7 @@ var BreezeConnect = function(params) {
                     self.tokenScriptDictList;
 
         } catch(error){
+
             throw error.toString();
         }
         }

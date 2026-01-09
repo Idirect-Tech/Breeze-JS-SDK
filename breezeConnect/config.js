@@ -214,6 +214,7 @@ const typeList = {
     EXCHANGE_CODES_HIST : ["nse", "nfo"],
     EXCHANGE_CODES_HIST_V2 : ["nse","bse","nfo","ndx","mcx","bfo"],
     DERI_EXCH_CODES : ["nfo","ndx","mcx","bfo"]
+
 }
 
 //Isec NSE Stockcode mapping file
