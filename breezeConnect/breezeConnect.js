@@ -12,6 +12,8 @@ const scriptMasterFile = require('./config').scriptMasterFile;
 const feedIntervalMap = require('./config').feedIntervalMap;
 const channelIntervalMap = require('./config').channelIntervalMap;
 const roomName = require('./config').roomName;
+const AdmZip = require('adm-zip');
+const { parse } = require('csv-parse/sync');
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
@@ -292,7 +294,7 @@ var BreezeConnect = function(params) {
         return outputData
     }
 
-    self.getStockTokenValue = function ({exchangeCode="", stockCode="", productType="", expiryDate="", strikePrice="", right="", getExchangeQuotes=true, getMarketDepth=true}) {
+    self.getStockTokenValue = function ({exchangeCode="", stockCode="", productType="", expiryDate="", strikePrice="", right="", getExchangeQuotes=true, getMarketDepth=true, interval=""}) {
         if (getExchangeQuotes === false && getMarketDepth === false) {
             self.subscribeException(exceptionMessage.QUOTE_DEPTH_EXCEPTION);
         } else {
@@ -306,12 +308,12 @@ var BreezeConnect = function(params) {
                 "BFO":"2.",
             };
 
-            if (self.interval == "" || self.interval == null) {
+            if (interval == "" || interval == null) {
                 exchangeCodeList["BFO"] = "8.";
+            } else {
+                exchangeCodeList["BFO"] = "2.";
             }
-
             var exchangeCodeName = exchangeCodeList[exchangeCode] || false;
-
             if(exchangeCodeName === false) {
                 self.subscribeException(exceptionMessage.EXCHANGE_CODE_EXCEPTION);
             } 
@@ -367,7 +369,10 @@ var BreezeConnect = function(params) {
                         tokenValue = self.stockScriptDictList[3][contractDetailValue] || false;
                     }
                     else if(exchangeCode.toLowerCase() === "nfo") {
-                        tokenValue = self.stockScriptDictList[4][contractDetailValue] || false;
+                        tokenValue = self.stockScriptDictList[4][contractDetailValue] || false;    
+                    }
+                    else if(exchangeCode.toLowerCase() === "bfo") {
+                        tokenValue = self.stockScriptDictList[5][contractDetailValue] || false;
                     }
                     else if(exchangeCode.toLowerCase() === "bfo") {
                         tokenValue = self.stockScriptDictList[5][contractDetailValue] || false;
@@ -377,7 +382,6 @@ var BreezeConnect = function(params) {
                 if(tokenValue === false) {
                     self.subscribeException(exceptionMessage.STOCK_INVALID_EXCEPTION);
                 }
-                
                 var exchangeQuotesTokenValue = false;
                 if(getExchangeQuotes !== false) {
                     exchangeQuotesTokenValue = exchangeCodeName + "1!" + tokenValue;
@@ -387,7 +391,6 @@ var BreezeConnect = function(params) {
                 if(getMarketDepth !== false) {
                     marketDepthTokenValue = exchangeCodeName + "2!" + tokenValue;
                 }
-
                 return {"exch_quote_token":exchangeQuotesTokenValue,"market_depth_token": marketDepthTokenValue};
 
             }
@@ -732,47 +735,108 @@ var BreezeConnect = function(params) {
         return dataDict
     }
 
-    self.getStockScriptList= async function(){
-        try{
-            self.stockScriptDictList = [{},{},{},{},{},{}]
-            self.tokenScriptDictList = [{},{},{},{},{},{}]
+    self.getContractName = function(underlying, productType, expiryDate, strikePrice, optionType) {
+        try {
+            productType = (productType || '').replace(/"/g, '').toUpperCase();
+            underlying = (underlying || '').replace(/"/g, '');
+            expiryDate = (expiryDate || '').replace(/"/g, '');
+            strikePrice = (strikePrice || '').replace(/"/g, '');
+            optionType = (optionType || '').replace(/"/g, '').toUpperCase();
 
-            var download = await axios.get(url=urls.STOCK_SCRIPT_CSV_URL)
-                            .then(function(resp){return resp});
-            var my_list = download.data.replaceAll('\r','').split('\n');
 
-            for (let row_string of my_list){
-                var row = row_string.split(',')
-                if(row[2] == "BSE"){
-                    self.stockScriptDictList[0][row[3]]=row[5]
-                    self.tokenScriptDictList[0][row[5]]=[row[3],row[1]]
-                }
-                else if(row[2] == "NSE"){
-                    self.stockScriptDictList[1][row[3]]=row[5]
-                    self.tokenScriptDictList[1][row[5]]=[row[3],row[1]]
-                }
-                else if(row[2] == "NDX"){
-                    self.stockScriptDictList[2][row[7]]=row[5]
-                    self.tokenScriptDictList[2][row[5]]=[row[7],row[1]]
-                }
-                else if(row[2] == "MCX"){
-                    self.stockScriptDictList[3][row[7]]=row[5]
-                    self.tokenScriptDictList[3][row[5]]=[row[7],row[1]]
-                }
-                else if(row[2] == "NFO"){
-                    self.stockScriptDictList[4][row[7]]=row[5]
-                    self.tokenScriptDictList[4][row[5]]=[row[7],row[1]]
-                }
-                else if(row[2] == "BFO"){
-                    self.stockScriptDictList[5][row[7]]=row[5]
-                    self.tokenScriptDictList[5][row[5]]=[row[7],row[1]]
-
-                }
+            if (productType.includes('FUT')) {
+            // FUT-<underlying>-<expiry>
+            return `FUT-${underlying}-${expiryDate}`;
+            } else {
+            const right = optionType.includes('C') ? 'CE' : 'PE';
+            return `OPT-${underlying}-${expiryDate}-${strikePrice}-${right}`;
             }
-        }catch(error){
+        } catch (err) {
+            return '';
+        }
+        }
+
+    self.getStockScriptList= async function(){
+        self.stockScriptDictList = [{}, {}, {}, {}, {}, {}];
+        self.tokenScriptDictList = [{}, {}, {}, {}, {}, {}];
+        try {
+            const resp = await axios.get(urls.SECURITY_MASTER_URL, { responseType: 'arraybuffer', timeout: 60000 });
+            const zip = new AdmZip(Buffer.from(resp.data));
+            const entries = zip.getEntries();
+
+            for (const entry of entries) {
+                    const fileName = entry.entryName;
+                    if (!fileName.toLowerCase().endsWith('.txt')) continue;
+
+                    const fUpper = fileName.toUpperCase();
+                    let exchangeCode = null;
+                    let idx = null;
+
+                    if (fUpper.includes('FONSE')) { exchangeCode = 'NFO'; idx = 4; }
+                    else if (fUpper.includes('FOBSE')) { exchangeCode = 'BFO'; idx = 5; }
+                    else if (fUpper.includes('MCX')) { exchangeCode = 'MCX'; idx = 3; }
+                    else if (fUpper.includes('NDX')) { exchangeCode = 'NDX'; idx = 2; }
+                    else if (fUpper.includes('NSE')) { exchangeCode = 'NSE'; idx = 1; }
+                    else if (fUpper.includes('BSE')) { exchangeCode = 'BSE'; idx = 0; }
+                    else continue;
+
+                    const raw = entry.getData().toString('utf8').replace(/\r/g, '');
+                    const rows = parse(raw, {
+                        relax_column_count: true,
+                        skip_empty_lines: true,
+                        relax_quotes: true,
+                });
+                for (const columns of rows) {
+                    if (!columns || columns.length < 5) continue;
+
+                    if (exchangeCode === 'BSE' || exchangeCode === 'NSE') {
+                        const token = (columns[0] || '').replace(/"/g, '').trim();
+                        const stockCode = ((columns[1] && columns[1].replace(/"/g,'')) || (columns[3] && columns[3].replace(/"/g,'')) || '').trim();
+                        const companyName = (columns[3] || '').replace(/"/g, '').trim();
+                        self.stockScriptDictList[idx][stockCode] = token;
+                        self.tokenScriptDictList[idx][token] = [stockCode, companyName];
+                    } 
+                    else if (exchangeCode === 'NFO' || exchangeCode === 'BFO') {
+                        const underlying = (columns[2] || '').replace(/"/g, '').trim();
+                        const productType = (columns[3] || '').replace(/"/g, '').trim();
+                        const expiry = (columns[4] || '').replace(/"/g, '').trim();
+                        const strike = (columns[5] || '').replace(/"/g, '').trim();
+                        const optType = (columns[6] || '').replace(/"/g, '').trim();
+                        const contractName = self.getContractName(underlying, productType, expiry, strike, optType);
+                        const token = (columns[0] || '').replace(/"/g, '').trim();
+                        const companyName = (columns.length > 29 ? (columns[29] || '') : '').replace(/"/g, '').trim();
+                        self.stockScriptDictList[idx][contractName] = token;
+                        self.tokenScriptDictList[idx][token] = [contractName, companyName];
+                    } 
+                    else if (exchangeCode === 'MCX') {
+                        // const underlying = columns[2] || '';
+                        // const productType = columns[3] || '';
+                        // const expiry = columns[7] || '';
+                        // const optType = columns[8] || '';
+                        // const strike = columns[9] || '';
+                        const contractName = self.getContractName(columns[2], columns[3], columns[7], columns[8], columns[9]);
+                        const token = (columns[0] || '').replace(/"/g, '').trim();
+                        const companyName = (columns[4] || '').replace(/"/g, '').trim();
+                        self.stockScriptDictList[idx][contractName] = token;
+                        self.tokenScriptDictList[idx][token] = [contractName, companyName];
+                    } 
+                    else if (exchangeCode === 'NDX') {
+                        const token = (columns[0] || '').replace(/"/g, '').trim();
+                        const stockCode = (columns[2] || '').replace(/"/g, '').trim();
+                        const companyName = (columns.length > 29 ? (columns[29] || '') : '').replace(/"/g, '').trim();
+                        self.stockScriptDictList[idx][stockCode] = token;
+                        self.tokenScriptDictList[idx][token] = [stockCode, companyName];
+                     }
+                } 
+            }
+            return self.stockScriptDictList,
+                    self.tokenScriptDictList;
+
+        } catch(error){
+
             throw error.toString();
         }
-    }
+        }
 
     self.subscribeFeeds = async function({stockToken="", exchangeCode="", stockCode="", productType="", expiryDate="", strikePrice="", right="", getExchangeQuotes=true, getMarketDepth=true, getOrderNotification=false,interval=""}){
         if(interval != ""){
@@ -815,7 +879,7 @@ var BreezeConnect = function(params) {
                 return return_object
             }
             else{
-                var tokenDict = self.getStockTokenValue({exchangeCode:exchangeCode, stockCode:stockCode, productType:productType, expiryDate:expiryDate, strikePrice:strikePrice, right:right, getExchangeQuotes:getExchangeQuotes, getMarketDepth:getMarketDepth});
+                var tokenDict = self.getStockTokenValue({exchangeCode:exchangeCode, stockCode:stockCode, productType:productType, expiryDate:expiryDate, strikePrice:strikePrice, right:right, getExchangeQuotes:getExchangeQuotes, getMarketDepth:getMarketDepth, interval:interval});
                 if(interval!=""){
                     if(self.socketOHLCV==null){
                         self.connect({isOHLCV:true});
@@ -870,7 +934,7 @@ var BreezeConnect = function(params) {
                 return self.socketConnectionResponse(responseMessage.STOCK_UNSUBSCRIBE_MESSAGE.format(stockToken));
             }
             else{
-                var tokenDict = self.getStockTokenValue({exchangeCode:exchangeCode, stockCode:stockCode, productType:productType, expiryDate:expiryDate, strikePrice:strikePrice, right:right, getExchangeQuotes:getExchangeQuotes, getMarketDepth:getMarketDepth})
+                var tokenDict = self.getStockTokenValue({exchangeCode:exchangeCode, stockCode:stockCode, productType:productType, expiryDate:expiryDate, strikePrice:strikePrice, right:right, getExchangeQuotes:getExchangeQuotes, getMarketDepth:getMarketDepth, interval:interval})
                 if(interval!="")
                     self.unwatchStreamData(stockToken["exch_quote_token"],interval);
                 else{

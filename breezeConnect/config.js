@@ -15,7 +15,7 @@ const urls = {
     LIVE_OHLC_STREAM_URL:"https://breezeapi.icicidirect.com",
 
     //Security Master Download Link 
-    SECURITY_MASTER_URL:"https://directlink.icicidirect.com/NewSecurityMaster/SecurityMaster.zip",
+    SECURITY_MASTER_URL : "https://directlink.icicidirect.com/MotherAppMaster/SecurityMaster.zip",
 
     //Stock Script Code Download Link
     STOCK_SCRIPT_CSV_URL:"https://traderweb.icicidirect.com/Content/File/txtFile/ScripFile/StockScriptNew.csv"
@@ -78,7 +78,7 @@ const responseMessage = {
     BLANK_EXCHANGE_CODE : "Exchange-Code cannot be empty",
     BLANK_STOCK_CODE : "Stock-Code cannot be empty",
     BLANK_PRODUCT_TYPE : "Product cannot be empty",
-    BLANK_PRODUCT_TYPE_NFO_BFO = "Product-type cannot be empty for Exchange-Code 'nfo' or 'bfo'"
+    BLANK_PRODUCT_TYPE_NFO_BFO : "Product-type cannot be empty for Exchange-Code 'nfo' or 'bfo'",
     BLANK_PRODUCT_TYPE_HIST_V2 : "Product-type cannot be empty for Exchange-Code 'nfo','ndx','mcx' or 'bfo'",
     BLANK_ACTION : "Action cannot be empty",
     BLANK_ORDER_TYPE : "Order-type cannot be empty",
@@ -213,7 +213,8 @@ const typeList = {
     TRANSACTION_TYPES : ["debit", "credit"],
     EXCHANGE_CODES_HIST : ["nse", "nfo"],
     EXCHANGE_CODES_HIST_V2 : ["nse","bse","nfo","ndx","mcx","bfo"],
-    DERI_EXCH_CODES : ["nfo","ndx","mcx"]
+    DERI_EXCH_CODES : ["nfo","ndx","mcx","bfo"]
+
 }
 
 //Isec NSE Stockcode mapping file
