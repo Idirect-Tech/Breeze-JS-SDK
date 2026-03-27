@@ -2,6 +2,7 @@
 
 <ul>
  <li><a href="#client">Breeze API Javascript Client</a></li>
+ <li><a href="#regulatoryChanges">Regulatory Changes</a></li>
  <li><a href="#docslink">API Documentation</a></li>
  <li><a href="#clientinstall">Installing Client</a></li>
  <li><a href="#apiusage">API Usage</a></li>
@@ -10,7 +11,7 @@
 </ul>
 
 
-<h4 id="client">Breeze API Javascript Client</h4>
+<h3 id="client">Breeze API Javascript Client</h3>
 
 breezeapi@icicisecurities.com
 
@@ -23,7 +24,17 @@ The official Javascript client library for the ICICI Securities trading APIs. Br
 5. Option Chain API
 
 
-<h4 id="docslink">API Documentation</h4>
+<h3 id="regulatoryChanges">Regulatory Changes</h3>
+
+1) Orders must be placed only from the static IP address registered with ICICI Direct while procuring API key.
+2) Primary or secondary static IP provided by the client can be updated only once per week.
+3) Each client can have multiple API keys as per the circular, however for unregistered algos (Breeze API) the client is restricted to route orders via single API key.
+4) A maximum combined limit of 10 orders per second is allowed, which includes order placement, cancellation, modification, and square-off requests.
+5) Market orders are not permitted.
+6) Placement, modification, or cancelation of Margin and Option Plus orders via the Breeze API is prohibited. 
+
+
+<h3 id="docslink">API Documentation</h3>
 
 <div class="sticky" >
 <ul>
@@ -32,13 +43,13 @@ The official Javascript client library for the ICICI Securities trading APIs. Br
 </ul>
 </div>
 
-<h4 id="clientinstall">Installing the client</h4>
+<h3 id="clientinstall">Installing the client</h3>
 
 ```
 npm install breezeconnect
 ```
 
-<h4 id="apiusage"> API Usage</h4>
+<h3 id="apiusage"> API Usage</h3>
 
 ```javascript
 
@@ -70,7 +81,7 @@ function apiCalls(){
 ```
 <br>
 
-<h4 id ="websocket"> Websocket Usage</h4>
+<h3 id ="websocket"> Websocket Usage</h3>
 
 ```javascript
 
@@ -277,7 +288,7 @@ For Streaming OHLCV, interval must not be empty and must be equal to either of t
 
 ---
 
-<h4> List of other SDK Methods:</h4>
+<h3> List of other SDK Methods:</h3>
 
 <h5 id="index_title" >Index</h5>
 
@@ -312,7 +323,7 @@ For Streaming OHLCV, interval must not be empty and must be equal to either of t
 </div>
 
 
-<h4 id="customer_detail" > Get Customer details by api-session value.</h4>
+<h3 id="customer_detail" > Get Customer details by api-session value.</h3>
 
 ```javascript
 breeze.getCustomerDetails("api session").then((data) => {
@@ -327,7 +338,7 @@ breeze.getCustomerDetails("api session").then((data) => {
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="demat_holding"> Get Demat Holding details of your account.</h4>
+<h3 id="demat_holding"> Get Demat Holding details of your account.</h3>
 
 ```javascript
 breeze.getDematHoldings().then(function(resp){
@@ -339,7 +350,7 @@ breeze.getDematHoldings().then(function(resp){
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="get_funds"> Get Funds details of your account.</h4>
+<h3 id="get_funds"> Get Funds details of your account.</h3>
 
 ```javascript
 breeze.getFunds().then(function(resp){
@@ -351,7 +362,7 @@ breeze.getFunds().then(function(resp){
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="set_funds"> Set Funds of your account</h4>
+<h3 id="set_funds"> Set Funds of your account</h3>
 
 ```javascript
 breeze.setFunds(
@@ -371,7 +382,7 @@ breeze.setFunds(
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="historical_data1">Get Historical Data for Equity</h4>
+<h3 id="historical_data1">Get Historical Data for Equity</h3>
 
 ```javascript
 breeze.getHistoricalData(
@@ -391,7 +402,7 @@ breeze.getHistoricalData(
 
 <a href="#index">Back to Index</a>
 
-<h4 id="historical_data2">Get Historical Data for Options</h4>
+<h3 id="historical_data2">Get Historical Data for Options</h3>
 
 ```javascript
 breeze.getHistoricalData(
@@ -401,7 +412,7 @@ breeze.getHistoricalData(
         toDate: "2022-08-17T07:00:00.000Z",
         stockCode:"CNXBAN",
         exchangeCode:"NFO",      // 'NSE','BSE','NFO'
-        productType:"options",   // "futures","options","futureplus","optionplus", 'cash'
+        productType:"options",   // "futures","options","cash"
         expiryDate:"2022-09-29T07:00:00.000Z",
         right:"call",           // "call","put", "others" 
         strikePrice:"38000"
@@ -414,7 +425,7 @@ breeze.getHistoricalData(
 
 <a href="#index">Back to Index</a>
 
-<h4 id="historical_data3">Get Historical Data for Futures</h4>
+<h3 id="historical_data3">Get Historical Data for Futures</h3>
 
 ```javascript
 breeze.getHistoricalData(
@@ -424,7 +435,7 @@ breeze.getHistoricalData(
         toDate: "2022-08-17T07:00:00.000Z",
         stockCode:"ICIBAN",
         exchangeCode:"NFO",      // 'NSE','BSE','NFO'
-        productType:"futures",   // "futures","options","futureplus","optionplus", 'cash'
+        productType:"futures",   // "futures","options","cash"
         expiryDate:"2022-08-25T07:00:00.000Z",
         right:"others",           // "call","put", "others" 
         strikePrice:"0"
@@ -439,7 +450,7 @@ breeze.getHistoricalData(
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="historical_data_v21">Get Historical Data (version 2) for Equity</h4>
+<h3 id="historical_data_v21">Get Historical Data (version 2) for Equity</h3>
 
 ```javascript
 breeze.getHistoricalDatav2(
@@ -459,7 +470,7 @@ breeze.getHistoricalDatav2(
 
 <a href="#index">Back to Index</a>
 
-<h4 id="historical_data_v22">Get Historical Data (version 2) for Options</h4>
+<h3 id="historical_data_v22">Get Historical Data (version 2) for Options</h3>
 
 ```javascript
 breeze.getHistoricalDatav2(
@@ -482,7 +493,7 @@ breeze.getHistoricalDatav2(
 
 <a href="#index">Back to Index</a>
 
-<h4 id="historical_data_v23">Get Historical Data (version 2) for Futures</h4>
+<h3 id="historical_data_v23">Get Historical Data (version 2) for Futures</h3>
 
 ```javascript
 breeze.getHistoricalDatav2(
@@ -492,7 +503,7 @@ breeze.getHistoricalDatav2(
         toDate: "2022-08-17T07:00:00.000Z",
         stockCode:"ICIBAN",
         exchangeCode:"NFO",      // 'NSE','BSE','NFO'
-        productType:"futures",   // "futures","options","futureplus","optionplus", 'cash'
+        productType:"futures",   // "futures","options","cash"
         expiryDate:"2022-08-25T07:00:00.000Z",
         right:"others",           // "call","put", "others" 
         strikePrice:"0"
@@ -516,13 +527,13 @@ Note :
 <hr>
 
 
-<h4 id="add_margin">Add Margin to your account.</h4>
+<h3 id="add_margin">Add Margin to your account.</h3>
 
 ```javascript
 
 breeze.addMargin(
     {
-        productType:"cash",   //"futures","options","futureplus","optionplus","cash","eatm","margin"
+        productType:"cash",   //"futures","options","cash"
         stockCode:"ITC", 
         exchangeCode:"NSE",    // 'NSE','BSE','NFO'
         settlementId:"2022106", 
@@ -547,7 +558,7 @@ breeze.addMargin(
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="get_margin">Get Margin of your account.</h4>
+<h3 id="get_margin">Get Margin of your account.</h3>
 
 ```javascript
 breeze.getMargin(exchangeCode='NSE').then(function(resp){
@@ -561,7 +572,7 @@ breeze.getMargin(exchangeCode='NSE').then(function(resp){
 <hr>
 
 
-<h4 id="place_order">Placing a Futures Order from your account.</h4>
+<h3 id="place_order">Placing a Futures Order from your account.</h3>
 
 
 ```javascript
@@ -587,12 +598,16 @@ breeze.placeOrder(
 .then(function(resp){
     console.log(resp);
 })
-```                    
+```   
+<h4> NOTE: </h4>
+<p><ol><li>Order Type should be "limit"</li>
+       <li>The validity_date parameter has no impact on the order execution and even if you pass it while placing the order, it will be excluded from order processing.</li>
+       <li> As per SEBI circular, "Safer participation of retail investors in Algorithmic trading", placing market orders through the Breeze API is not permitted. You are required to place limit orders instead of market orders.</li></ol></p>                 
 
 <br>
 <a href="#index">Back to Index</a>
 
-<h4 id="place_order">Placing a btst Order from your account.</h4>
+<!-- <h3 id="place_order">Placing a btst Order from your account.</h3>
 
 
 ```javascript
@@ -622,13 +637,13 @@ breeze.placeOrder(
     console.log(resp);
 })
 
-```                    
+```                     -->
 
-<br>
-<a href="#index">Back to Index</a>
+<!-- <br>
+<a href="#index">Back to Index</a> -->
 <hr>
 
-<h4 id="place_order2">Placing an Option Order from your account.</h4>
+<h3 id="place_order2">Placing an Option Order from your account.</h3>
 
 
 ```javascript
@@ -654,12 +669,15 @@ breeze.placeOrder(
     console.log(resp);
 })
 ```
-
+<h4> NOTE: </h4>
+<p><ol><li>Order Type should be "limit"</li>
+       <li>The validity_date parameter has no impact on the order execution and even if you pass it while placing the order, it will be excluded from order processing.</li>
+       <li> As per SEBI circular, "Safer participation of retail investors in Algorithmic trading", placing market orders through the Breeze API is not permitted. You are required to place limit orders instead of market orders.</li></ol></p> 
 
 <br>
 <a href="#index">Back to Index</a>
 
-<h4 id="place_order3">Place a cash order from your account.</h4>
+<h3 id="place_order3">Place a cash order from your account.</h3>
 
 
 ```javascript
@@ -679,12 +697,17 @@ breeze.placeOrder(
 .then(function(resp){
     console.log(resp);
 })
-```                
+```    
+
+<h4> NOTE: </h4>
+<p><ol><li>Order Type should be "limit"</li>
+       <li>The validity_date parameter has no impact on the order execution and even if you pass it while placing the order, it will be excluded from order processing.</li>
+       <li> As per SEBI circular, "Safer participation of retail investors in Algorithmic trading", placing market orders through the Breeze API is not permitted. You are required to place limit orders instead of market orders.</li></ol></p> 
 
 <br>
 <a href="#index">Back to Index</a>
 
-<h4 id="place_order4">Place an optionplus order</h4>
+<!-- <h3 id="place_order4">Place an optionplus order</h3>
 
 ```javascript
 
@@ -713,10 +736,9 @@ breeze.placeOrder(
     console.log(resp);
 })
 ```                
-<br>
-<a href="#index">Back to Index</a>
 
-<h4 id="place_order5">Place an future plus order</h4>
+<!-- <a href="#index">Back to Index</a> -->
+<!-- <h3 id="place_order5">Place an future plus order</h3>
 
 ```javascript
 
@@ -742,11 +764,11 @@ breeze.placeOrder(
 ```                
 <br>
 <p>Future plus - "Stop loss trigger price cannot be less than last traded price for Buy order" </p>
-<a href="#index">Back to Index</a>
+<a href="#index">Back to Index</a> -->
 
 <hr>
 
-<h4 id="order_detail">Get an order details by exchange-code and order-id from your account.</h4>
+<h3 id="order_detail">Get an order details by exchange-code and order-id from your account.</h3>
 
 ```javascript
 breeze.getOrderDetail(
@@ -765,7 +787,7 @@ breeze.getOrderDetail(
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="order_list">Get order list of your account.</h4>
+<h3 id="order_list">Get order list of your account.</h3>
 
 
 ```javascript
@@ -787,7 +809,7 @@ breeze.getOrderList(
 <hr>
 
 
-<h4 id="cancel_order">Cancel an order from your account whose status are not Executed.</h4> 
+<h3 id="cancel_order">Cancel an order from your account whose status are not Executed.</h3> 
 
 
 ```javascript
@@ -806,7 +828,7 @@ breeze.cancelOrder(
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="modify_order">Modify an order from your account whose status are not Executed.</h4> 
+<h3 id="modify_order">Modify an order from your account whose status are not Executed.</h3> 
 
 
 ```javascript
@@ -827,12 +849,15 @@ breeze.modifyOrder(
     console.log(resp);
 })
 ```
-
+<h4> NOTE: </h4>
+<p><ol><li>The validity_date parameter has no impact on the modification of the order and even if you pass it while modifying the order, it will be excluded from order modification processing.</li>
+<li>As per SEBI circular, "Safer participation of retail investors in Algorithmic trading", modifying market orders through the Breeze API is not permitted. You are required to modify limit orders instead of market orders.</li></ol></p>
 <br>
+
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="portfolio_holding">Get Portfolio Holdings of your account.</h4>
+<h3 id="portfolio_holding">Get Portfolio Holdings of your account.</h3>
 
 
 ```javascript
@@ -855,7 +880,7 @@ breeze.getPortfolioHoldings(
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="portfolio_position">Get Portfolio Positions from your account.</h4>
+<h3 id="portfolio_position">Get Portfolio Positions from your account.</h3>
 
 
 ```javascript
@@ -867,7 +892,7 @@ breeze.getPortfolioPositions()
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="get_quotes">Get quotes of mentioned stock-code </h4>
+<h3 id="get_quotes">Get quotes of mentioned stock-code </h3>
 
 
 ```javascript
@@ -890,7 +915,7 @@ breeze.getQuotes(
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="get_option_chain">Get option-chain of mentioned stock-code for product-type Futures where input of expiry-date is not compulsory</h4>
+<h3 id="get_option_chain">Get option-chain of mentioned stock-code for product-type Futures where input of expiry-date is not compulsory</h3>
 
 
 ```javascript
@@ -910,7 +935,7 @@ breeze.getOptionChainQuotes(
 <br>
 <a href="#index">Back to Index</a>
 
-<h4 id="get_option_chain2">Get option-chain of mentioned stock-code for product-type Options where atleast 2 input is required out of expiry-date, right and strike-price</h4>
+<h3 id="get_option_chain2">Get option-chain of mentioned stock-code for product-type Options where atleast 2 input is required out of expiry-date, right and strike-price</h3>
 
 
 ```javascript
@@ -933,19 +958,19 @@ breeze.getOptionChainQuotes(
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="square_off1">Square off an Equity Margin Order</h4>
+<h3 id="square_off1">Square off an Equity Margin Order</h3>
 
 
 ```javascript
 breeze.squareOff(
     {
         exchangeCode:"NSE",
-        product:"margin",
+        product:"cash",
         stockCode:"NIFTY",
         quantity:"10",
         price:"0",
         action:"sell",
-        orderType:"market",
+        orderType:"limit",
         validity:"day",
         stoploss:"0",
         disclosedQuantity:"0",
@@ -960,12 +985,14 @@ breeze.squareOff(
     console.log(resp);
 })
 ```
-
-<p> Note: Please refer getPortfolioPositions() for settlement id and margin_amount</p>
+<h4> NOTE: </h4>
+<p><ol><li>The validity_date parameter has no impact on the square off order execution and even if you pass it while squaring off the position, it will be excluded from square off order processing.</li>
+<li>As per SEBI circular, "Safer participation of retail investors in Algorithmic trading", squaring off orders to market orders through the Breeze API is not permitted. You are required to place limit or stoploss order instead of market orders.</li>
+<li>Please refer getPortfolioPositions() for settlement id and margin_amount</li></ol></p>
 <br>
 <a href="#index">Back to Index</a>
 
-<h4 id="square_off2">Square off an FNO Futures Order</h4>
+<h3 id="square_off2">Square off an FNO Futures Order</h3>
 
 
 ```javascript
@@ -991,10 +1018,13 @@ breeze.squareOff(
 })
 ```
 
+<h4> NOTE: </h4>
+<p><ol><li>The validity_date parameter has no impact on the square off order execution and even if you pass it while squaring off the position, it will be excluded from square off order processing.</li>
+<li>As per SEBI circular, "Safer participation of retail investors in Algorithmic trading", squaring off orders to market orders through the Breeze API is not permitted. You are required to place limit or stoploss order instead of market orders.</li></ol></p>
 <br>
 <a href="#index">Back to Index</a>
 
-<h4 id="square_off3">Square off an FNO Options Order</h4>
+<h3 id="square_off3">Square off an FNO Options Order</h3>
 
 
 ```javascript
@@ -1021,12 +1051,14 @@ breeze.squareOff(
     console.log(resp);
 })
 ```                    
-
+<h4> NOTE: </h4>
+<p><ol><li>The validity_date parameter has no impact on the square off order execution and even if you pass it while squaring off the position, it will be excluded from square off order processing.</li>
+<li>As per SEBI circular, "Safer participation of retail investors in Algorithmic trading", squaring off orders to market orders through the Breeze API is not permitted. You are required to place limit or stoploss order instead of market orders.</li></ol></p>
 <br>
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="trade_list">Get trade list of your account.</h4>
+<h3 id="trade_list">Get trade list of your account.</h3>
 
 
 ```javascript
@@ -1050,7 +1082,7 @@ breeze.getTradeList(
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id="trade_detail">Get trade detail of your account.</h4>
+<h3 id="trade_detail">Get trade detail of your account.</h3>
 
 
 ```javascript
@@ -1071,7 +1103,7 @@ breeze.getTradeDetail(
 <hr>
 
 
-<h4 id = "get_names">Get Names </h4>
+<h3 id = "get_names">Get Names </h3>
 
 
 ```javascript
@@ -1090,7 +1122,7 @@ breeze.getNames({exchangeCode : 'NSE',stockCode : 'RELIANCE'})
 <a href="#index">Back to Index</a>
 <hr>
 
-<h4 id = "preview_order">Preview Order </h4>
+<h3 id = "preview_order">Preview Order </h3>
 
 ```javascript
 
@@ -1098,7 +1130,7 @@ breeze.getNames({exchangeCode : 'NSE',stockCode : 'RELIANCE'})
         {
         stockCode : "ICIBAN",
         exchangeCode : "NSE",
-        productType : "margin",
+        productType : "cash",
         orderType  : "limit",
         price : "907.05",
         action :"buy",
@@ -1116,12 +1148,12 @@ breeze.getNames({exchangeCode : 'NSE',stockCode : 'RELIANCE'})
 
 <hr>
 
-<h4 id = "limit_calculator">Limit Calculator </h4>
+<h3 id = "limit_calculator">Limit Calculator </h3>
 
 ```javascript
 
 breeze.limitCalculator(strikePrice = "19200",                                    
-    productType = "optionplus",                 
+    productType = "options",                 
     expiryDate  = "06-JUL-2023",
     underlying = "NIFTY",
     exchangeCode = "NFO",
@@ -1141,7 +1173,7 @@ breeze.limitCalculator(strikePrice = "19200",
 
 <hr>
 
-<h4 id = "margin_calculator">margin calculator </h4>
+<h3 id = "margin_calculator">margin calculator </h3>
 
 ```javascript
 
@@ -1181,7 +1213,7 @@ breeze.limitCalculator(strikePrice = "19200",
             "strike_price": "0",
             "quantity": "50",
             "right": "others",
-            "product": "futureplus",
+            "product": "futures",
             "action": "buy",
             "price": "19800",
             "expiry_date": "27-Jul-2023",
@@ -1197,7 +1229,7 @@ breeze.limitCalculator(strikePrice = "19200",
             "strike_price": "19600",
             "quantity": "50",
             "right": "call",
-            "product": "optionplus",
+            "product": "options",
             "action": "buy",
             "price": "245.05",
             "expiry_date": "27-Jul-2023",
