@@ -15,7 +15,7 @@ const urls = {
     LIVE_OHLC_STREAM_URL:"https://breezeapi.icicidirect.com",
 
     //Security Master Download Link 
-    SECURITY_MASTER_URL:"https://directlink.icicidirect.com/NewSecurityMaster/SecurityMaster.zip",
+    SECURITY_MASTER_URL : "https://directlink.icicidirect.com/MotherAppMaster/SecurityMaster.zip",
 
     //Stock Script Code Download Link
     STOCK_SCRIPT_CSV_URL:"https://traderweb.icicidirect.com/Content/File/txtFile/ScripFile/StockScriptNew.csv"
@@ -78,8 +78,8 @@ const responseMessage = {
     BLANK_EXCHANGE_CODE : "Exchange-Code cannot be empty",
     BLANK_STOCK_CODE : "Stock-Code cannot be empty",
     BLANK_PRODUCT_TYPE : "Product cannot be empty",
-    BLANK_PRODUCT_TYPE_NFO : "Product-type cannot be empty for Exchange-Code 'nfo'",
-    BLANK_PRODUCT_TYPE_HIST_V2 : "Product-type cannot be empty for Exchange-Code 'nfo','ndx' or 'mcx'",
+    BLANK_PRODUCT_TYPE_NFO_BFO : "Product-type cannot be empty for Exchange-Code 'nfo' or 'bfo'",
+    BLANK_PRODUCT_TYPE_HIST_V2 : "Product-type cannot be empty for Exchange-Code 'nfo','ndx','mcx' or 'bfo'",
     BLANK_ACTION : "Action cannot be empty",
     BLANK_ORDER_TYPE : "Order-type cannot be empty",
     BLANK_QUANTITY : "Quantity cannot be empty",
@@ -106,12 +106,12 @@ const responseMessage = {
 
     //Validation Errors
     EXCHANGE_CODE_ERROR : "Exchange-Code should be either 'nse', or 'nfo'",
-    EXCHANGE_CODE_HIST_V2_ERROR : "Exchange-Code should be either 'nse', 'bse' ,'nfo', 'ndx' or 'mcx'",
-    PRODUCT_TYPE_ERROR : "Product should be either 'futures', 'options', 'futureplus', 'optionplus', 'cash', 'eatm', or 'margin'",
-    PRODUCT_TYPE_ERROR_NFO : "Product-type should be either 'futures', 'options', 'futureplus', or 'optionplus' for Exchange-Code 'NFO'",
+    EXCHANGE_CODE_HIST_V2_ERROR : "Exchange-Code should be either 'nse', 'bse' ,'nfo', 'ndx','mcx' or 'bfo'",
+    PRODUCT_TYPE_ERROR : "Product should be either 'futures', 'options' or 'cash'",
+    PRODUCT_TYPE_ERROR_NFO : "Product-type should be either 'futures' or 'options' for Exchange-Code 'NFO'",
     PRODUCT_TYPE_ERROR_HIST_V2 : "Product-type should be either 'futures', 'options' for Exchange-Code 'NFO','NDX' or 'MCX'",
     ACTION_TYPE_ERROR : "Action should be either 'buy', or 'sell'",
-    ORDER_TYPE_ERROR : "Order-type should be either 'limit', 'market', or 'stoploss'",
+    ORDER_TYPE_ERROR : "Order-type should be either 'limit' or 'stoploss'",
     VALIDITY_TYPE_ERROR : "Validity should be either 'day', 'ioc', or 'vtc'",
     RIGHT_TYPE_ERROR : "Right should be either 'call', 'put', or 'others'",
     TRANSACTION_TYPE_ERROR : "Transaction-Type should be either 'debit' or 'credit'",
@@ -119,7 +119,7 @@ const responseMessage = {
     INTERVAL_TYPE_ERROR : "Interval should be either '1minute', '5minute', '30minute', or '1day'",
     INTERVAL_TYPE_ERROR_HIST_V2 : "Interval should be either '1second','1minute', '5minute', '30minute', or '1day'",
     API_SESSION_ERROR : "API Session cannot be empty",
-    OPT_CHAIN_EXCH_CODE_ERROR : "Exchange code should be nfo",
+    OPT_CHAIN_EXCH_CODE_ERROR : "Exchange code should be nfo or bfo",
     NFO_FIELDS_MISSING_ERROR : "Atleast two inputs are required out of Expiry-Date, Right & Strike-Price. All three cannot be empty'.",
 
     //Socket Connectivity Response
@@ -157,7 +157,6 @@ const tuxToUserMap = {
     },
     "limitMarketFlag": {
         "L": "Limit",
-        "M": "Market",
         "S": "StopLoss"
     },
     "orderType": {
@@ -168,14 +167,8 @@ const tuxToUserMap = {
     "productType": {
         "F": "Futures",
         "O": "Options",
-        "P": "FuturePlus",
-        "U": "FuturePlus_sltp",
-        "I": "OptionPlus",
         "C": "Cash",
-        "Y": "eATM",
         "B": "BTST",
-        "M": "Margin",
-        "T": "MarginPlus"
     },
     "orderStatus": {
         "A": "All",
@@ -203,17 +196,18 @@ const typeList = {
     INTERVAL_TYPES : ["1minute", "5minute", "30minute", "1day"],
     INTERVAL_TYPES_HIST_V2 : ["1second","1minute", "5minute", "30minute", "1day"],
     INTERVAL_TYPES_STREAM_OHLC : ["1second","1minute", "5minute", "30minute"],
-    PRODUCT_TYPES : ["futures", "options", "futureplus", "optionplus", "cash", "eatm", "margin","btst","mtf"],
-    PRODUCT_TYPES_HIST : ["futures", "options", "futureplus", "optionplus"],
+    PRODUCT_TYPES : ["futures", "options", "cash", "btst","mtf"],
+    PRODUCT_TYPES_HIST : ["futures", "options"],
     PRODUCT_TYPES_HIST_V2 : ["futures", "options","cash"],
     RIGHT_TYPES : ["call", "put", "others"],
     ACTION_TYPES : ["buy", "sell"],
-    ORDER_TYPES : ["limit", "market", "stoploss"],
+    ORDER_TYPES : ["limit","stoploss"],
     VALIDITY_TYPES : ["day", "ioc", "vtc"],
     TRANSACTION_TYPES : ["debit", "credit"],
     EXCHANGE_CODES_HIST : ["nse", "nfo"],
-    EXCHANGE_CODES_HIST_V2 : ["nse","bse","nfo","ndx","mcx"],
-    DERI_EXCH_CODES : ["nfo","ndx","mcx"]
+    EXCHANGE_CODES_HIST_V2 : ["nse","bse","nfo","ndx","mcx","bfo"],
+    DERI_EXCH_CODES : ["nfo","ndx","mcx","bfo"]
+
 }
 
 //Isec NSE Stockcode mapping file
