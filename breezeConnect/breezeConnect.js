@@ -282,12 +282,12 @@ var BreezeConnect = function(params) {
             for(let date of stockData[0].split("-").slice(2,5))
                 dateString += date + "-";
             outputData["strike_date"] = dateString.slice(0,-1);
-            if(stockData[0].split("-")>5){
+            if(stockData[0].split("-").length > 5){
                 outputData["strike_price"] = stockData[0].split("-")[5];
                 var right = stockData[0].split("-")[6];
                 if(right.toUpperCase()=="PE")
                     outputData["right"] = "Put";
-                if(righttoUpperCase()=="CE")
+                if(right.toUpperCase()=="CE")
                     outputData["right"] = "Call";
             }
         }
@@ -373,10 +373,6 @@ var BreezeConnect = function(params) {
                     }
                     else if(exchangeCode.toLowerCase() === "bfo") {
                         tokenValue = self.stockScriptDictList[5][contractDetailValue] || false;
-                    }
-                    else if(exchangeCode.toLowerCase() === "bfo") {
-                        tokenValue = self.stockScriptDictList[5][contractDetailValue] || false;
-
                     }
                 }
                 if(tokenValue === false) {
@@ -833,7 +829,6 @@ var BreezeConnect = function(params) {
                     self.tokenScriptDictList;
 
         } catch(error){
-
             throw error.toString();
         }
         }
@@ -966,9 +961,9 @@ var BreezeConnect = function(params) {
     };
 
     self.makeRequest = async function(method, endpoint, body, header) {
+        let url;
         try {
-
-            let url = urls.API_URL + endpoint;
+            url = urls.API_URL + endpoint;
             let res = null;
 
             if(method === apiRequest.GET) {
@@ -998,6 +993,10 @@ var BreezeConnect = function(params) {
                 return res;
             }
         } catch (error) {
+            if (error.response) {
+                console.log("[DEBUG] API response status:", error.response.status);
+                console.log("[DEBUG] API response body:", JSON.stringify(error.response.data));
+            }
             self.errorException(exceptionMessage.API_REQUEST_EXCEPTION.format(method,url), error);
         }
     };
@@ -1395,11 +1394,11 @@ var BreezeConnect = function(params) {
 
     self.getOrderDetail = async function({exchangeCode="", orderId="" }) {
         try {
-            if(exchangeCode === "" && exchangeCode === null && orderId === "" && orderId === null) {
-                if(exchangeCode === "" && exchangeCode === null) {
+            if(exchangeCode === "" || exchangeCode === null || orderId === "" || orderId === null) {
+                if(exchangeCode === "" || exchangeCode === null) {
                     return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
                 }
-                else if(orderId === "" && orderId === null) {
+                else if(orderId === "" || orderId === null) {
                     return self.validationErrorResponse(responseMessage.BLANK_ORDER_ID);
                 }
             }
@@ -1445,7 +1444,7 @@ var BreezeConnect = function(params) {
 
     self.cancelOrder = async function({exchangeCode = "", orderId = ""}) {
         try {
-            if(exchangeCode === "" || exchangeCode === null && orderId === "" || orderId === null) {
+            if(exchangeCode === "" || exchangeCode === null || orderId === "" || orderId === null) {
                 if(exchangeCode === "" || exchangeCode === null) {
                     return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
                 }
@@ -1472,18 +1471,18 @@ var BreezeConnect = function(params) {
                 if(exchangeCode === "" || exchangeCode === null) {
                     return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
                 }
-                else if(order_id === "" || order_id === null) {
+                else if(orderId === "" || orderId === null) {
                     return self.validationErrorResponse(responseMessage.BLANK_ORDER_ID);
                 }
             }
-            else if(orderType !== "" && orderType !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
+            else if(orderType !== "" && orderType !== null && !Boolean(typeList.ORDER_TYPES.includes(orderType.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.BLANK_ORDER_TYPE);
             }
             else if(validity !== "" && validity !== null && !Boolean(typeList.VALIDITY_TYPES.includes(validity.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.ORDER_TYPE_ERROR);
             }
             let body = {
-                "order_id": order_id,
+                "order_id": orderId,
                 "exchange_code": exchangeCode,
             }
 
@@ -1600,8 +1599,8 @@ var BreezeConnect = function(params) {
 
     self.getOptionChainQuotes = async function({stockCode="", exchangeCode="", expiryDate="", productType="", right="", strikePrice=""}) {
         try {
-            if(exchangeCode === "" || exchangeCode === null || exchangeCode.toLowerCase()!=="nfo" || exchangeCode.toLowerCase()!=="bfo") {
-                return self.validationErrorResponse(responseMessage.OPT_CHAIN_EXCH_CODE_ERROR);
+            if(exchangeCode === "" || exchangeCode === null || (exchangeCode.toLowerCase()!=="nfo" && exchangeCode.toLowerCase()!=="bfo")) {
+                 return self.validationErrorResponse(responseMessage.OPT_CHAIN_EXCH_CODE_ERROR);
             }
             else if(productType === "" || productType === null) {
                 return self.validationErrorResponse(responseMessage.BLANK_PRODUCT_TYPE_NFO);
@@ -1687,7 +1686,7 @@ var BreezeConnect = function(params) {
             else if(validity !== "" && validity !== null && !Boolean(typeList.VALIDITY_TYPES.includes(validity.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.VALIDITY_TYPE_ERROR);
             }
-            else if(orderType !== "" && orderType !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
+            else if(orderType !== "" && orderType !== null && !Boolean(typeList.ORDER_TYPES.includes(orderType.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.ORDER_TYPE_ERROR);
             }
 
@@ -1873,7 +1872,7 @@ var BreezeConnect = function(params) {
                 "product_type":productType,                 
                 "expiry_date": expiryDate,
                 "underlying" : underlying,
-                "exchange_code":expiryDate,
+                "exchange_code":exchangeCode,
                 "order_flow" :orderFlow,
                 "stop_loss_trigger":stopLossTrigger,
                 "option_type":optionType,
