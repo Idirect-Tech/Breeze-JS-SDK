@@ -201,13 +201,13 @@ const typeList = {
     PRODUCT_TYPES_HIST_V2 : ["futures", "options","cash"],
     RIGHT_TYPES : ["call", "put", "others"],
     ACTION_TYPES : ["buy", "sell"],
-    ORDER_TYPES : ["limit","stoploss"],
+    ORDER_TYPES : ["limit","stoploss","market"],
     VALIDITY_TYPES : ["day", "ioc", "vtc"],
     TRANSACTION_TYPES : ["debit", "credit"],
     EXCHANGE_CODES_HIST : ["nse", "nfo"],
     EXCHANGE_CODES_HIST_V2 : ["nse","bse","nfo","ndx","mcx","bfo"],
-    DERI_EXCH_CODES : ["nfo","ndx","mcx","bfo"]
-
+    DERI_EXCH_CODES : ["nfo","ndx","mcx","bfo"],
+    AGGRESSIVE_LIMIT_INDICES : ["NIFTY","CNXBAN","NIFSEL","NIFFIN","BSESEN","BANKEX"]
 }
 
 //Isec NSE Stockcode mapping file

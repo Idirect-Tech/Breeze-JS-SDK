@@ -374,10 +374,6 @@ var BreezeConnect = function(params) {
                     else if(exchangeCode.toLowerCase() === "bfo") {
                         tokenValue = self.stockScriptDictList[5][contractDetailValue] || false;
                     }
-                    else if(exchangeCode.toLowerCase() === "bfo") {
-                        tokenValue = self.stockScriptDictList[5][contractDetailValue] || false;
-
-                    }
                 }
                 if(tokenValue === false) {
                     self.subscribeException(exceptionMessage.STOCK_INVALID_EXCEPTION);
@@ -617,17 +613,17 @@ var BreezeConnect = function(params) {
                 order_dict["modificationOrCancelFlag"] = data[35]           //Modification or Cancel Flag
                 order_dict["tradeDate"] = data[36]                          //Trade Date
                 order_dict["acknowledgeNumber"] = data[37]                  //Acknowledgement Number
-                order_dict["stopLossOrderReference"] = data[37]             //Stop Loss Order Reference
-                order_dict["totalAmountBlocked"] = data[38]                 // Total Amount Blocked
-                order_dict["averageExecutedRate"] = data[39]                //Average Executed Rate
-                order_dict["cancelFlag"] = data[40]                         //Cancel Flag
-                order_dict["squareOffMarket"] = data[41]                    //SquareOff Market
-                order_dict["quickExitFlag"] = data[42]                      //Quick Exit Flag
-                order_dict["stopValidTillDateFlag"] = data[43]              //Stop Valid till Date Flag
-                order_dict["priceImprovementFlag"] = data[44]               //Price Improvement Flag
-                order_dict["conversionImprovementFlag"] = data[45]          //Conversion Improvement Flag
-                order_dict["trailUpdateCondition"] = data[45]               //Trail Update Condition
-                order_dict["systemPartnerCode"] = data[46]                  //System Partner Code
+                order_dict["stopLossOrderReference"] = data[38]             //Stop Loss Order Reference
+                order_dict["totalAmountBlocked"] = data[39]                 // Total Amount Blocked
+                order_dict["averageExecutedRate"] = data[40]                //Average Executed Rate
+                order_dict["cancelFlag"] = data[41]                         //Cancel Flag
+                order_dict["squareOffMarket"] = data[42]                    //SquareOff Market
+                order_dict["quickExitFlag"] = data[43]                      //Quick Exit Flag
+                order_dict["stopValidTillDateFlag"] = data[44]              //Stop Valid till Date Flag
+                order_dict["priceImprovementFlag"] = data[45]               //Price Improvement Flag
+                order_dict["conversionImprovementFlag"] = data[46]          //Conversion Improvement Flag
+                order_dict["trailUpdateCondition"] = data[47]               //Trail Update Condition
+                order_dict["systemPartnerCode"] = data[48]                  //System Partner Code
             }
             return order_dict;
         }
@@ -833,7 +829,6 @@ var BreezeConnect = function(params) {
                     self.tokenScriptDictList;
 
         } catch(error){
-
             throw error.toString();
         }
         }
@@ -1001,7 +996,6 @@ var BreezeConnect = function(params) {
             self.errorException(exceptionMessage.API_REQUEST_EXCEPTION.format(method,url), error);
         }
     };
-
 
     self.getCustomerDetails = async function(session_token="") {
         try {
@@ -1302,6 +1296,110 @@ var BreezeConnect = function(params) {
         }
     };
 
+    self.tickSizeCalculation = function(stockCode, product, exchangeCode, ltp) {
+        stockCode = (stockCode || "").toUpperCase();
+        product = (product || "").toLowerCase();
+        exchangeCode = (exchangeCode || "").toUpperCase();
+        ltp = Number(ltp) || 0;
+
+        if (exchangeCode === "NSE" || exchangeCode === "NFO") {
+            if (typeList.AGGRESSIVE_LIMIT_INDICES.includes(stockCode)) {
+                if (product === "options") return 0.05;
+                else if (product === "futures") {
+                    if (ltp < 15000) return 0.05;
+                    else if (ltp>=15000 && ltp < 30000) return 0.10;
+                    else if (ltp < 30000) return 0.20;
+                }
+            } else {
+                if (product === "futures" || product === "cash") {
+                    if (ltp < 250) return 0.01;
+                    else if (ltp >=250 && ltp < 1000) return 0.05;
+                    else if (ltp >=1000 && ltp < 5000) return 0.10;
+                    else if (ltp >=5000 && ltp < 10000) return 0.50;
+                    else if (ltp >=10000 && ltp < 20000) return 1;
+                    else if (ltp >=20000) return 5;
+                }
+                else if (product === "options") return 0.05;
+            }
+        } else if (exchangeCode === "BSE" || exchangeCode === "BFO") {
+            if (typeList.AGGRESSIVE_LIMIT_INDICES.includes(stockCode)) return 0.05;
+            if (ltp <= 100) return 0.01;
+            return 0.05;
+        }
+        return 0.05;
+    };
+
+    self.getAggressiveLimitPrice = async function({stockCode = "", exchangeCode = "", product = "", action = "", right = "", expiryDate = "", strikePrice = ""}) {
+        try {
+            if (action === "" || action === null ||
+                (action.toLowerCase() !== "buy" && action.toLowerCase() !== "sell")) {
+                return { price: null, error: responseMessage.ACTION_TYPE_ERROR };
+            }
+
+            let quotes = await self.getQuotes({
+                stockCode: stockCode,
+                exchangeCode: exchangeCode,
+                productType: product,
+                right: right,
+                expiryDate: expiryDate,
+                strikePrice: strikePrice
+            });
+
+            let data = (quotes && quotes.Success) ? quotes.Success : [];
+            if (!data || data.length === 0) {
+                return { price: null, error: "Quotes not available" };
+            }
+
+            let q;
+            if (exchangeCode.toLowerCase() === "bse" && data.length > 1) {
+                q = data[1];
+            } else {
+                q = data[0];
+            }
+
+            let ltp = Number(q.ltp);
+            let upperCkt = Number(q.upper_circuit);
+            let lowerCkt = Number(q.lower_circuit);
+            let quoteExchange = q.exchange_code || exchangeCode;
+
+            let percent, minDiff, price;
+            if (product.toLowerCase() === "options") { percent = 10;  minDiff = 5;    }
+            else if (product.toLowerCase() === "futures") { percent = 1.5; minDiff = 0.05; }
+            else if (product.toLowerCase() === "cash")    { percent = 3;   minDiff = 0.05; }
+            else return { price: null, error: "Invalid product" };
+
+            let percentPrice = ltp * percent / 100;
+            
+            if (percentPrice >= minDiff){
+                if (action.toLowerCase() === "buy"){
+                    price = ltp + percentPrice;
+                }
+                else if (action.toLowerCase() === "sell"){
+                    price = ltp - percentPrice;
+                }
+            } else if (percentPrice < minDiff){
+                if (action.toLowerCase() === "buy"){
+                    price = ltp + minDiff;
+                }
+                else if (action.toLowerCase() === "sell"){
+                    price = ltp - minDiff;
+                }
+            }
+
+            let dprPrice = Math.max(lowerCkt, Math.min(price, upperCkt));
+
+            let tickSize = self.tickSizeCalculation(stockCode, product, quoteExchange, ltp);
+            console.log(`Tick size for ${stockCode} with product ${product} and ltp ${ltp} : ${tickSize}`);
+            let finalPrice = Math.round(dprPrice / tickSize) * tickSize;
+            finalPrice = Number(finalPrice.toFixed(2));
+            console.log(`Aggressive limit price : ${finalPrice}`);
+
+            return { price: finalPrice, error: null };
+        } catch (error) {
+            return { price: null, error: error.toString() };
+        }
+    };
+
     self.placeOrder = async function({stockCode="", exchangeCode="", product="", action="", orderType="", stoploss="", quantity="", price="", validity="", validityDate="", disclosedQuantity="", expiryDate="", right="", strikePrice="", userRemark="", orderTypeFresh = "", orderRateFresh = "",settlementId = "",orderSegmentCode = ""}) {
         try {
             if(stockCode === "" || stockCode === null || exchangeCode === "" || exchangeCode === null || product === "" || product === null || action === "" || action === null || orderType === "" || orderType === null || quantity === "" || quantity === null || price === "" || price === null || action === "" || action == null) {
@@ -1341,6 +1439,24 @@ var BreezeConnect = function(params) {
             }
             else if(right !== "" && right !== null && (right.toLowerCase() !== "put" && right.toLowerCase() !== "call" && right.toLowerCase() !== "others")) {
                 return self.validationErrorResponse(responseMessage.RIGHT_TYPE_ERROR);
+            }
+
+            // -------- AGGRESSIVE --------
+            if (orderType.toLowerCase() === "market") {
+                let { price: finalPrice, error: aggError } = await self.getAggressiveLimitPrice({
+                    stockCode: stockCode,
+                    exchangeCode: exchangeCode,
+                    product: product,
+                    action: action,
+                    right: right,
+                    expiryDate: expiryDate,
+                    strikePrice: strikePrice
+                });
+                if (aggError) {
+                    return self.validationErrorResponse(aggError);
+                }
+                price = finalPrice;
+                orderType = "limit";
             }
 
             let body = {
@@ -1468,22 +1584,70 @@ var BreezeConnect = function(params) {
 
     self.modifyOrder = async function({orderId = "", exchangeCode = "", orderType = "", stoploss = "", quantity = "", price = "", validity = "", disclosedQuantity = "", validityDate = ""}) {
         try {
-            if(exchangeCode === "" || exchangeCode === null || orderId === "" || orderId === null) {
-                if(exchangeCode === "" || exchangeCode === null) {
-                    return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
-                }
-                else if(order_id === "" || order_id === null) {
-                    return self.validationErrorResponse(responseMessage.BLANK_ORDER_ID);
-                }
+            if(exchangeCode === "" || exchangeCode === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_EXCHANGE_CODE);
             }
-            else if(orderType !== "" && orderType !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
-                return self.validationErrorResponse(responseMessage.BLANK_ORDER_TYPE);
+            else if(orderId === "" || orderId === null) {
+                return self.validationErrorResponse(responseMessage.BLANK_ORDER_ID);
             }
-            else if(validity !== "" && validity !== null && !Boolean(typeList.VALIDITY_TYPES.includes(validity.toLowerCase()))) {
+            else if(orderType !== "" && orderType !== null && !Boolean(typeList.ORDER_TYPES.includes(orderType.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.ORDER_TYPE_ERROR);
             }
+            else if(validity !== "" && validity !== null && !Boolean(typeList.VALIDITY_TYPES.includes(validity.toLowerCase()))) {
+                return self.validationErrorResponse(responseMessage.VALIDITY_TYPE_ERROR);
+            }
+
+            // -------- FETCH ORDER --------
+            let orderData = await self.getOrderDetail({exchangeCode: exchangeCode, orderId: orderId});
+            let data = (orderData && orderData.Success) ? orderData.Success : [];
+            if (!data || data.length === 0) {
+                return self.validationErrorResponse("Order not found");
+            }
+            let order = data[0];
+            let status = (order.status || "").toLowerCase();
+
+            // -------- STATUS CHECK --------
+            if (status !== "ordered" && status !== "requested" && status !== "partially executed") {
+                return self.validationErrorResponse("Order has already been executed and cannot be modified.");
+            }
+
+            // -------- EXTRACT ORIGINAL --------
+            let originalValues = {
+                "order_type": order.order_type,
+                "price": order.price,
+                "quantity": order.quantity
+            };
+
+            // -------- AGGRESSIVE --------
+            if (orderType && orderType.toLowerCase() === "market") {
+                let { price: finalPrice, error: aggError } = await self.getAggressiveLimitPrice({
+                    stockCode: order.stock_code,
+                    exchangeCode: exchangeCode,
+                    product: order.product_type,
+                    action: order.action,
+                    right: order.right,
+                    expiryDate: order.expiry_date,
+                    strikePrice: order.strike_price
+                });
+                if (aggError) {
+                    return self.validationErrorResponse(aggError);
+                }
+                price = finalPrice;
+                orderType = "limit";
+            }
+
+            // -------- LOG CHANGES --------
+            let modifiedValues = {
+                "order_type": orderType,
+                "price": price,
+                "quantity": quantity
+            };
+
+            console.log("[MODIFY] Original:", originalValues);
+            console.log("[MODIFY] Modified:", modifiedValues);
+
             let body = {
-                "order_id": order_id,
+                "order_id": orderId,
                 "exchange_code": exchangeCode,
             }
 
@@ -1600,8 +1764,8 @@ var BreezeConnect = function(params) {
 
     self.getOptionChainQuotes = async function({stockCode="", exchangeCode="", expiryDate="", productType="", right="", strikePrice=""}) {
         try {
-            if(exchangeCode === "" || exchangeCode === null || exchangeCode.toLowerCase()!=="nfo" || exchangeCode.toLowerCase()!=="bfo") {
-                return self.validationErrorResponse(responseMessage.OPT_CHAIN_EXCH_CODE_ERROR);
+            if(exchangeCode === "" || exchangeCode === null || (exchangeCode.toLowerCase()!=="nfo" && exchangeCode.toLowerCase()!=="bfo")) {
+                 return self.validationErrorResponse(responseMessage.OPT_CHAIN_EXCH_CODE_ERROR);
             }
             else if(productType === "" || productType === null) {
                 return self.validationErrorResponse(responseMessage.BLANK_PRODUCT_TYPE_NFO);
@@ -1662,9 +1826,10 @@ var BreezeConnect = function(params) {
     };
 
     self.squareOff = async function(
-        {sourceFlag = "", stockCode = "", exchangeCode  = "", quantity  = "", price  = "", action  = "", orderType  = "", validity  = "", stoploss  = "", 
-            disclosedQuantity  = "", protectionPercentage  = "", settlementId  = "", marginAmount  = "", openQuantity  = "", coverQuantity  = "", 
-            productType  = "", expiryDate  = "", right  = "", strikePrice  = "", validityDate  = "", tradePassword  = "", aliasName  = ""}) 
+        {sourceFlag = "", stockCode = "", exchangeCode  = "", quantity  = "", price  = "", action  = "", orderType  = "", validity  = "", stoploss  = "",
+            disclosedQuantity  = "", protectionPercentage  = "", settlementId  = "", marginAmount  = "", openQuantity  = "", coverQuantity  = "",
+            productType  = "", expiryDate  = "", right  = "", strikePrice  = "", validityDate  = "", tradePassword  = "", aliasName  = "",
+            orderReference = "", positionExchangeCode = "", lots = "", orderId = ""})
         {
         try {
             if(exchangeCode === "" || exchangeCode === null || stockCode === "" || stockCode === null) {
@@ -1674,7 +1839,7 @@ var BreezeConnect = function(params) {
                 if(stockCode === "" || stockCode === null) {
                     return self.validationErrorResponse(responseMessage.BLANK_STOCK_CODE);
                 }
-            }   
+            }
             else if(productType !== "" && productType !== null && !Boolean(typeList.PRODUCT_TYPES.includes(productType.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.PRODUCT_TYPE_ERROR);
             }
@@ -1687,10 +1852,44 @@ var BreezeConnect = function(params) {
             else if(validity !== "" && validity !== null && !Boolean(typeList.VALIDITY_TYPES.includes(validity.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.VALIDITY_TYPE_ERROR);
             }
-            else if(orderType !== "" && orderType !== null && !Boolean(typeList.ORDER_TYPES.includes(order_type.toLowerCase()))) {
+            else if(orderType !== "" && orderType !== null && !Boolean(typeList.ORDER_TYPES.includes(orderType.toLowerCase()))) {
                 return self.validationErrorResponse(responseMessage.ORDER_TYPE_ERROR);
             }
 
+            // -------- FETCH ORDER (OPTIONAL) --------
+            if (orderId) {
+                let orderData = await self.getOrderDetail({exchangeCode: exchangeCode, orderId: orderId});
+                let data = (orderData && orderData.Success) ? orderData.Success : [];
+                if (data && data.length > 0) {
+                    let order = data[0];
+                    let originalAction = (order.action || "").toLowerCase();
+                    action = originalAction === "buy" ? "sell" : "buy";
+                    console.log("[SQUARE OFF] Action:", originalAction, "--", action);
+                } else {
+                    return self.validationErrorResponse("Order not found");
+                }
+            }
+
+            // -------- AGGRESSIVE --------
+            if (orderType && orderType.toLowerCase() === "market") {
+                let { price: finalPrice, error: aggError } = await self.getAggressiveLimitPrice({
+                    stockCode: stockCode,
+                    exchangeCode: exchangeCode,
+                    product: productType,
+                    action: action,
+                    right: right,
+                    expiryDate: expiryDate,
+                    strikePrice: strikePrice
+                });
+                if (aggError) {
+                    return self.validationErrorResponse(aggError);
+                }
+                price = finalPrice;
+                orderType = "limit";
+            }
+
+            // -------- LOG --------
+            console.log("[SQUARE OFF] Final Action:", action, "Price:", price);
 
             let body = {
                 "source_flag": sourceFlag,
@@ -1714,7 +1913,10 @@ var BreezeConnect = function(params) {
                 "strike_price": strikePrice,
                 "validity_date": validityDate,
                 "alias_name": aliasName,
-                "trade_password": tradePassword
+                "trade_password": tradePassword,
+                "order_reference": orderReference,
+                "position_exchange_code": positionExchangeCode,
+                "lots": lots
             };
             let headers = self.generateHeaders(body);
             let response = await self.makeRequest(apiRequest.POST, apiEndpoint.SQUARE_OFF, body, headers);
@@ -1783,7 +1985,6 @@ var BreezeConnect = function(params) {
         }
     };
 
-    
     self.previewOrder = async function({ stockCode="",exchangeCode="",productType="",orderType="",price="",action="",quantity="",expiryDate="",right="",strikePrice="",specialFlag="",stoploss="",orderRateFresh=""})
     {
         try
