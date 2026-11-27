@@ -287,9 +287,96 @@ Both get_exchange_quotes and get_market_depth can be True, But both must not be 
 For Streaming OHLCV, interval must not be empty and must be equal to either of the following "1second","1minute", "5minute", "30minute"
 
 ---
+<h2 id="aggressive_limit_order">Aggressive Limit Order</h2>
 
-<h3> List of other SDK Methods:</h3>
+As per regulatory requirements, market orders are not supported via Breeze API.  
+Any order marked as a "market" order will instead be placed as an aggressive limit order across Equity and F&O segments.
 
+To increase the probability of execution, the system determines order price using the following logic:
+### 1. Reference Price (LTP)
+- The **Last Traded Price (LTP)** is used as the base.
+
+### 2. Range Calculation (±%)
+A price range is calculated based on a percentage of LTP for each segment:
+
+| Segment  | Percentage Range |
+|----------|-----------------|
+| Equity   | 3% above and below LTP   |
+| Futures  | 1.5% above and below LTP |
+| Options  | 10% above and below LTP  |
+
+### 3. Minimum Difference Rule
+A minimum difference of 5 points for options and 0.05 for future and equity is ensured (even if the calculated percentage-based result is less than 5/0.05 for the respective segments)| 
+
+### 4. DPR Range Check
+The final order price must fall within the exchange-defined DPR (Daily Price Range).
+
+### 5. Final Order Placement
+
+- **Buy Orders** → Placed at a higher price but within DPR limits.
+- **Sell Orders** → Placed at a lower price, but within DPR limits.
+
+---
+## Let’s take an example of an option’s contract to understand this:
+### Test Case 1: If 10% of LTP > Minimum Difference
+
+**LTP:** 100  
+
+**Step 1: Calculate 10% Range**
+- 10% of 100 = 10  
+- Range = 100 plus and minus 10 = 90 to 110  
+
+**Step 2: Check Minimum Difference**
+- Difference = 10 which is greater than minimum difference of 5, so no change needed
+
+**Step 3: Compare with DPR Range**
+- DPR Range = 95 to 105  
+- AThe calculated range (90–110) goes beyond DPR limits
+
+**Step 4: Final Price**
+
+ → For Buy: We choose the higher price, but cannot exceed DPR upper limit
+
+ → **Buy Order = 105**
+ 
+ → For Sell: We choose the lower price, but cannot go below DPR lower limit
+ 
+ → **Sell Order = 95**
+
+---
+
+### Test Case 2:  If 10% of LTP < Minimum Difference
+
+**LTP:** 40  
+
+**Step 1: Calculate 10% Range**
+- 10% of 40 = 4  
+- Range = 40 plus or minus 4 = 36 to 44
+
+**Step 2: Check Minimum Difference**
+- Difference = 4 (which is less than minimum 5)
+- So, we apply minimum difference of 5 
+
+**Step 3: Adjust Prices using minimum difference**
+- Buy Price = 40 + 5 = 45  
+- Sell Price = 40 - 5 = 35  
+
+**Step 4: Compare with DPR Range**
+- DPR Range = 34 to 46  
+- Both 45 and 35 fall within this range
+
+**Step 5: Final Price**
+- **Buy Order = 45**  
+- **Sell Order = 35**
+
+<h3> IMPORTANT NOTE: </h3>
+<p>As ‘Aggressive limit order’ are limit orders, there is a possibility that they may get partially executed, remain pending, or even get rejected depending on market conditions. We request you to kindly monitor the price movements and manage your orders accordingly.</p>
+
+---
+
+<h3> List of APIs:</h3>
+
+---
 <h5 id="index_title" >Index</h5>
 
 <div class="sticky" id="index">
@@ -312,7 +399,6 @@ For Streaming OHLCV, interval must not be empty and must be equal to either of t
  <li><a href="#get_quotes">get_quotes</a></li>
  <li><a href="#get_option_chain">get_option_chain_quotes</a></li>
  <li><a href="#square_off1">square_off</a></li>
- <li><a href="#modify_order">modify_order</a></li>
  <li><a href="#trade_list">get_trade_list</a></li>
  <li><a href="#trade_detail">get_trade_detail</a></li>
  <li><a href="#get_names"> get_names </a></li>
@@ -653,7 +739,7 @@ breeze.placeOrder(
         exchangeCode:"NFO",
         product:"options",
         action:"buy",
-        orderType:"market",
+        orderType:"limit",
         stoploss:"",
         quantity:"50",
         price:"",
@@ -1003,7 +1089,7 @@ breeze.squareOff(
         stockCode:"ICIBAN",
         expiryDate:"2022-08-25T06:00:00.000Z",
         action:"sell",
-        orderType:"market",
+        orderType:"limit",
         validity:"day",
         stoploss:"0",
         quantity:"50",
@@ -1037,7 +1123,7 @@ breeze.squareOff(
         right:"Call",
         strikePrice:"16850",
         action:"sell",
-        orderType:"market",
+        orderType:"limit",
         validity:"day",
         stoploss:"0",
         quantity:"50",
